@@ -1,35 +1,28 @@
-import { useNavigate } from "react-router-dom";
+
 import { useState } from "react";
 import logo from "../assets/logo_sf.png";
-import { usuarios } from "../data/usuarios";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const navigate = useNavigate();
-  const [error, setError] = useState("");
+  const { login } = useAuth();
+  const [error,   setError]   = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    const dni = e.target.dni.value.trim();
-    const password = e.target.password.value.trim();
+    const dni       = parseInt(e.target.dni.value.trim())
+    const contrasena = e.target.password.value.trim();
 
-    const usuarioEncontrado = usuarios.find(
-      (u) => u.dni === dni && u.password === password
-    );
-
-    if (!usuarioEncontrado) {
-      alert("Credenciales incorrectas");
-      return;
+    try {
+      await login(dni, contrasena); // redirige automáticamente según rol
+    } catch (err) {
+      setError(err.message || "Credenciales incorrectas");
+    } finally {
+      setLoading(false);
     }
-
-    // Guardar usuario logueado
-    localStorage.setItem("usuarioLogueado", JSON.stringify(usuarioEncontrado));
-
-    // Redirección según rol
-    if (usuarioEncontrado.rol === "admin") navigate("/admin");
-    else if (usuarioEncontrado.rol === "profesor") navigate("/profesor");
-    else if (usuarioEncontrado.rol === "usuario") navigate("/perfil");
-    else navigate("/recepcion");
   };
 
   return (
@@ -51,7 +44,7 @@ export default function Login() {
               DNI
             </label>
             <input
-              type="text"
+              type="number"
               name="dni"
               className="form-control"
               placeholder="Ej: 40123456"
@@ -73,8 +66,12 @@ export default function Login() {
           </div>
 
           <div className="d-grid">
-            <button type="submit" className="btn btn-primary login-btn">
-              Ingresar
+            <button
+              type="submit"
+              className="btn btn-primary login-btn"
+              disabled={loading}
+            >
+              {loading ? "Ingresando..." : "Ingresar"}
             </button>
           </div>
         </form>

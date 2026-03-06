@@ -147,8 +147,8 @@ export default function Gastos() {
         <div className="col-md-4">
           {/* GRÁFICOS */}
           <div className="card admin-card">
-            <div class="card-body">
-              <h5 class="card-title">Categorías de Gastos
+            <div className="card-body">
+              <h5 className="card-title">Categorías de Gastos
               </h5>
 
               <div className="col-md-12">
@@ -173,8 +173,8 @@ export default function Gastos() {
       {/* RESUMENES */}
 
       <div className="card admin-card">
-        <div class="card-body">
-          <h5 class="card-title">Resumen de Balances</h5>
+        <div className="card-body">
+          <h5 className="card-title">Resumen de Balances</h5>
           <div className="row mt-2">
             {["Diario", "Mensual", "Anual"].map((tipo) => (
               <div className="col-md-4" key={tipo}>

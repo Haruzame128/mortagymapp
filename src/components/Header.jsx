@@ -34,7 +34,7 @@ export default function Navbar({ tipoBanner = "normal" }) {
             aria-label="Toggle navigation"
             onClick={() => setMenuAbierto(!menuAbierto)}
           >
-            <i class="ri-menu-line"></i>
+            <i className="ri-menu-line"></i>
           </button>
 
           <div className={`py-2 collapse navbar-collapse ${menuAbierto ? "show" : "py-2"}`} id="mainNav">
