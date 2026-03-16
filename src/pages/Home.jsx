@@ -1,32 +1,39 @@
-import React from 'react'
+
+import React, { useState, useEffect } from 'react'
 import Contacto from '../components/Contacto'
 import logo from '../assets/logo_sf.png'
 import foto1 from '../assets/foto4.jpg'
 import foto2 from '../assets/foto9.jpg'
 import foto3 from '../assets/foto5.jpeg'
 import foto4 from '../assets/foto6.jpg'
-import buffet from '../assets/cafeteria.jpeg'
-import revisacion from '../assets/revisacion-med.jpeg'
-import nutricionista from '../assets/nutricionista.jpeg'
-import { RiCalendarScheduleFill, RiPhoneFill, RiMapPin2Fill, RiInstagramFill } from '@remixicon/react';  // Quité RiWhatsappFill
+import { RiCalendarScheduleFill, RiPhoneFill, RiMapPin2Fill, RiInstagramFill } from '@remixicon/react'
+import { serviciosApi } from '../services/api'
 
 import '../styles/Home.css'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
 export default function Home() {
+  const [servicios, setServicios] = useState([])
+
+  useEffect(() => {
+    serviciosApi.getPublicos()
+      .then(data => setServicios(data))
+      .catch(() => {}) // si falla no rompe la página
+  }, [])
+
   return (
     <div className="home-container">
-      {/* Sección Hero - Como estaba */}
+      {/* Hero */}
       <section className="hero-simple d-flex flex-column align-items-center justify-content-center text-center">
         <img src={logo} alt="Morta Gym" className="hero-logo mb-3" />
-        <h1 className="titulo-pagina hero-title">
-          Bienvenido a Morta Gym
-        </h1>
+        <h1 className="titulo-pagina hero-title">Bienvenido a Morta Gym</h1>
         <p className="hero-sub mt-3">
           Entrená con profesionales, equipos de alta calidad y un plan pensado para vos.
         </p>
       </section>
 
-      {/* Quiénes Somos - Título arriba, luego texto y carrusel lado a lado */}
+      {/* Quiénes Somos */}
       <section className="home-section">
         <div className="qs-content">
           <h2 className="qs-titulo ps-2">Quiénes Somos</h2>
@@ -51,18 +58,11 @@ export default function Home() {
             <div className="col-12 col-md-6">
               <div id="carouselQuienesSomos" className="carousel slide">
                 <div className="carousel-inner">
-                  <div className="carousel-item active">
-                    <img src={foto1} className="d-block" alt="Actividad 1" />
-                  </div>
-                  <div className="carousel-item">
-                    <img src={foto2} className="d-block" alt="Actividad 2" />
-                  </div>
-                  <div className="carousel-item">
-                    <img src={foto3} className="d-block" alt="Actividad 3" />
-                  </div>
-                  <div className="carousel-item">
-                    <img src={foto4} className="d-block" alt="Actividad 4" />
-                  </div>
+                  {[foto1, foto2, foto3, foto4].map((foto, i) => (
+                    <div key={i} className={`carousel-item ${i === 0 ? 'active' : ''}`}>
+                      <img src={foto} className="d-block" alt={`Actividad ${i + 1}`} />
+                    </div>
+                  ))}
                 </div>
                 <button className="carousel-control-prev" type="button" data-bs-target="#carouselQuienesSomos" data-bs-slide="prev">
                   <span className="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -73,10 +73,11 @@ export default function Home() {
                   <span className="visually-hidden">Next</span>
                 </button>
                 <div className="carousel-indicators">
-                  <button type="button" data-bs-target="#carouselQuienesSomos" data-bs-slide-to="0" className="active" aria-current="true" aria-label="Slide 1"></button>
-                  <button type="button" data-bs-target="#carouselQuienesSomos" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                  <button type="button" data-bs-target="#carouselQuienesSomos" data-bs-slide-to="2" aria-label="Slide 3"></button>
-                  <button type="button" data-bs-target="#carouselQuienesSomos" data-bs-slide-to="3" aria-label="Slide 4"></button>
+                  {[0, 1, 2, 3].map((i) => (
+                    <button key={i} type="button" data-bs-target="#carouselQuienesSomos"
+                      data-bs-slide-to={i} className={i === 0 ? 'active' : ''}
+                      aria-label={`Slide ${i + 1}`} />
+                  ))}
                 </div>
               </div>
             </div>
@@ -84,98 +85,54 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Servicios - Con tarjetas */}
-      <section id="servicio" className="contacto-section">
-        <div className="container mt-5">
-          <h2 className="qs-titulo text-center mb-3">Nuestros Servicios</h2>
-          <div className="row g-4">
-            {/* Buffet */}
-            <div className="col-12 col-md-4">
-              <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                <div className="card-img">
-                  <img src={buffet} className="card-img-top" alt="Buffet" />
+      {/* Servicios — dinámicos desde la DB */}
+      {servicios.length > 0 && (
+        <section id="servicio" className="contacto-section">
+          <div className="container mt-5">
+            <h2 className="qs-titulo text-center mb-3">Nuestros Servicios</h2>
+            <div className="row g-4">
+              {servicios.map((s) => (
+                <div key={s.id_servicio} className="col-12 col-md-4">
+                  <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                    {s.imagen_s && (
+                      <div className="card-img">
+                        <img
+                          src={`${BASE_URL}${s.imagen_s}`}
+                          className="card-img-top"
+                          alt={s.nombre_s}
+                        />
+                      </div>
+                    )}
+                    <div className="card-body text-center">
+                      <h5 className="card-title fw-bold">{s.nombre_s}</h5>
+                      <p className="card-text">{s.descripcion_s}</p>
+                      {s.extra_s && (
+                        <p className="dato-servicio">{s.extra_s}</p>
+                      )}
+                      {s.redes_s && (
+                        <p className="dato-servicio">
+                          <a className="enlace" href={s.redes_s} target="_blank" rel="noopener noreferrer">
+                            <RiInstagramFill size={24} /> Ver en Instagram
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-               
-                <div className="card-body text-center">
-                  <h5 className="card-title fw-bold">Cafetería Saludable</h5>
-                  <p className="card-text">
-                    Disfrutá de comidas y snacks saludables diseñados para acompañar tu entrenamiento y cuidar tu nutrición.
-                  </p>
-                  <p className="dato-servicio">
-                    Seguinos y conocé nuestros platos:
-                  </p>
-                  <p className="dato-servicio">
-                    <a className='enlace' href="https://www.instagram.com/xlafuerzaco25/" target='_blank' rel="noopener noreferrer">
-                    <RiInstagramFill size={24} />X La Fuerza
-                    </a>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Revisación médica */}
-            <div className="col-12 col-md-4">
-              <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                <div className="card-img">
-                  <img src={revisacion} className="card-img-top" alt="Revisación médica" />  
-                </div>
-                <div className="card-body text-center">
-                  <h5 className="card-title fw-bold">Revisación Médica</h5>
-                  <p className="card-text">
-                    Realizá el control médico obligatorio en nuestras instalaciones, 
-                    requisito indispensable para practicar natación de forma segura.
-                  </p>
-                  <p className="dato-servicio">
-                    Lunes, Miércoles y Viernes - 21:00 a 22:00 Hs
-                  </p>
-                  <p className="dato-servicio">
-                    Martes y Jueves - 8:00 a 9:00 Hs
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Nutricionista */}
-            <div className="col-12 col-md-4">
-              <div className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-                <div className="card-img">
-                  <img src={nutricionista} className="card-img-top" alt="Nutricionista" />
-                </div>
-              
-                <div className="card-body text-center">
-                  <h5 className="card-title fw-bold">Asesoramiento Nutricional</h5>
-                  <p className="card-text">
-                    La Lic. en nutrición Andrea Angeloni te ayudará a lograr tus objetivos
-                     con un plan alimenticio personalizado.
-                  </p>
-                  <p className="dato-servicio">
-                    Martes y Jueves - 14:00 a 18:00 Hs
-                  </p >
-                  <p className="dato-servicio">
-                    Turnos al: 2974048254
-                  </p>
-                  <p className="dato-servicio">
-                    <a className='enlace' href="https://www.instagram.com/nutricionenmovimientoaa/" target='_blank' rel="noopener noreferrer">
-                    <RiInstagramFill size={24} />Nutrición en Movimiento
-                    </a>
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Contacto - Título arriba, datos en fila, mapa debajo */}
+      {/* Contacto */}
       <section id="contacto" className="contacto-section">
         <div className="container mt-5">
           <h2 className="qs-titulo">Contacto</h2>
           <div className="contacto-datos row">
             <div className="col-12 col-md-4">
               <div className="dato-contacto">
-                <div className="icon-contacto">
-                  <RiPhoneFill size={25} color="white" />
-                </div>
+                <div className="icon-contacto"><RiPhoneFill size={25} color="white" /></div>
                 <div>
                   <p className="titulo-dato-contacto">Teléfono</p>
                   <p className="texto-dato-contacto">297 5014149</p>
@@ -184,9 +141,7 @@ export default function Home() {
             </div>
             <div className="col-12 col-md-4">
               <div className="dato-contacto">
-                <div className="icon-contacto">
-                  <RiCalendarScheduleFill size={25} color="white" />
-                </div>
+                <div className="icon-contacto"><RiCalendarScheduleFill size={25} color="white" /></div>
                 <div>
                   <p className="titulo-dato-contacto">Horario</p>
                   <p className="texto-dato-contacto">Lunes a Viernes: 7:00 a 22:00 Hs</p>
@@ -197,9 +152,7 @@ export default function Home() {
             </div>
             <div className="col-12 col-md-4">
               <div className="dato-contacto">
-                <div className="icon-contacto">
-                  <RiMapPin2Fill size={25} color="white" />
-                </div>
+                <div className="icon-contacto"><RiMapPin2Fill size={25} color="white" /></div>
                 <div>
                   <p className="titulo-dato-contacto">Dirección</p>
                   <p className="texto-dato-contacto">Surinam 1190, Caleta Olivia</p>

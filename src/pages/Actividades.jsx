@@ -1,156 +1,107 @@
-import React from 'react'
+
+import { useState, useEffect } from 'react'
 import '../styles/Actividades.css'
 import Disciplina from '../components/Disciplina'
+import { disciplinasApi } from '../services/api'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+// Transforma los precios del backend al formato que espera Disciplina.jsx
+// { precio_1, precio_1_debito, ..., precio_dia, precio_dia_debito }
+// → { 1: { efectivo, debito }, ..., clase: { efectivo, debito } }
+function transformarPrecios(d) {
+  const precios = {}
+
+  for (let i = 1; i <= 6; i++) {
+    const ef  = Number(d[`precio_${i}`])        || 0
+    const deb = Number(d[`precio_${i}_debito`]) || 0
+    if (ef > 0 || deb > 0) {
+      precios[String(i)] = { efectivo: ef, debito: deb }
+    }
+  }
+
+  if (Number(d.precio_dia) > 0 || Number(d.precio_dia_debito) > 0) {
+    precios['clase'] = {
+      efectivo: Number(d.precio_dia)        || 0,
+      debito:   Number(d.precio_dia_debito) || 0,
+    }
+  }
+
+  return precios
+}
+
+// Transforma las imágenes del backend al formato { id, src }
+function transformarImagenes(imagenes, imagenPrincipal) {
+  if (imagenes && imagenes.length > 0) {
+    return imagenes.map(img => ({
+      id:  img.id_imagen,
+      src: `${BASE_URL}${img.imagen}`,
+    }))
+  }
+  // Si no hay imágenes en la tabla, usa la imagen principal
+  if (imagenPrincipal) {
+    return [{ id: 1, src: `${BASE_URL}${imagenPrincipal}` }]
+  }
+  return [{ id: 1, src: '/disciplinas/default.jpg' }]
+}
+
+// Transforma las actividades al formato modalData: [{ id, titulo, descripcion }]
+function transformarModalData(actividades) {
+  return actividades
+    .filter(a => a.descripcion_a) // solo las que tienen descripción
+    .map(a => ({
+      id:          String(a.id_actividad),
+      titulo:      a.nombre_a,
+      descripcion: a.descripcion_a,
+    }))
+}
+
+// Arma el string de subactividades: "Adultos - Niños - Hidrogimnasia"
+function transformarSubactividad(actividades) {
+  if (!actividades || actividades.length === 0) return ''
+  return actividades.map(a => a.nombre_a).join(' - ')
+}
 
 export default function Actividades() {
+  const [disciplinas, setDisciplinas] = useState([])
+  const [loading,     setLoading]     = useState(true)
 
-  const preciosMusculacion = {
-    clase: { debito: 17000, efectivo: 14000 },
-    1: { debito: 33000, efectivo: 28000},
-    2: { debito: 41000, efectivo: 33000},
-    3: { debito: 49000, efectivo: 40000},
-    4: { debito: 58000, efectivo: 47000},
-    5: { debito: 65000, efectivo: 60000},
-    6: { debito: 73000, efectivo: 66000},
-  };
+  useEffect(() => {
+    disciplinasApi.getPublico()
+      .then(data => setDisciplinas(data))
+      .catch(() => setDisciplinas([]))
+      .finally(() => setLoading(false))
+  }, [])
 
-  const preciosFuncional = {
-    clase: { debito: 17000, efectivo: 14000 },
-    1: { debito: 41000, efectivo: 33000},
-    2: { debito: 48000, efectivo: 40000},
-    3: { debito: 58000, efectivo: 47000},
-    4: { debito: 65000, efectivo: 53000},
-    5: { debito: 72000, efectivo: 60000},
-    6: { debito: 81000, efectivo: 66000},
-  };
-
-  const preciosPilates = {
-    clase: { debito: 17000, efectivo: 14000 },
-    1: { debito: 41000, efectivo: 33000},
-    2: { debito: 48000, efectivo: 40000},
-    3: { debito: 58000, efectivo: 47000},
-    4: { debito: 65000, efectivo: 53000},
-    5: { debito: 72000, efectivo: 60000},
-    6: { debito: 81000, efectivo: 66000},
-  };
-
-  const preciosJudo = {
-    clase: { debito: 50000, efectivo: 45000 }
-  };
-
-  const fotosMusculacion = [
-    { id: 1, src: '/disciplinas/musculacion.png' },
-    { id: 2, src: '/disciplinas/musculacion2.png' },
-  ];
-
-  const fotosPilates = [
-    { id: 1, src: '/disciplinas/pilates1.jpg' },
-    { id: 2, src: '/disciplinas/pilates2.jpg' },
-  ];
-  
-  const fotosFuncional = [
-    { id: 1, src: '/disciplinas/funcional.jpg' },
-    { id: 2, src: '/disciplinas/funcional2.jpg' },
-  ];
-
-  const fotosEntrenamiento = [
-    { id: 1, src: '/disciplinas/entrenamiento.jpg' },
-    { id: 2, src: '/disciplinas/entrenamiento2.jpg' },
-  ];
-  
-  const fotosJudo = [
-    { id: 1, src: '/disciplinas/df1.jpg' },
-    { id: 2, src: '/disciplinas/df2.jpg' },
-  ];
-  
-  const fotosNatacion = [
-    { id: 1, src: '/disciplinas/natacion.jpg' },
-    { id: 2, src: '/disciplinas/natacion2.jpg' },
-  ];
-
-  const modalNatacion = [
-    { id: 'adultos', titulo: 'Adultos',
-      descripcion: 'Clases enfocadas en técnica, resistencia y nado continuo. Ideal para quienes ya tienen experiencia en el agua.',
-    },
-    { id: 'iniciales', titulo: 'Adultos Iniciales',
-      descripcion: 'Clases para quienes recién comienzan. Se trabaja la familiarización con el medio acuático y las técnicas básicas.',
-    },
-    { id: 'natacionkids', titulo: 'Niños', descripcion: 'Clases lúdicas y seguras que promueven la adaptación al agua y el desarrollo de habilidades básicas de nado'},
-    { id: 'hidrogimnasia', titulo: 'Hidrogimnasia',
-      descripcion: 'Actividad acuática de bajo impacto, ideal para mejorar movilidad, circulación y fuerza muscular.',
-    },
-   
-  ];
-
-  const modalFuncional = [
-    {id: 'mixto', titulo: 'Mixto', descripcion: 'Se trabaja con rutinas variadas, aplicables y utiles como base para distintos deportes.'},
-    {id: 'mayores', titulo: 'Adultos Mayores', descripcion: 'Se trabaja en base a la fuerza de cada persona, previniendo lesiones y mejorando la calidad de vida de cada adulto.'},
-    {id: 'kids', titulo: 'Kids', descripcion: 'Se busca desarrollar coordinación, equilibrio, motricidad gruesa y habilidades básicas (correr, saltar, trepar).'},
-    {id: 'adolescentes', titulo: 'Adolescentes', descripcion: 'Se apunta a mejorar fuerza, velocidad, resistencia y agilidad, ya que el cuerpo está en pleno crecimiento.'},
-  ]
-
-  const modalPilates = [
-    {id: 'pfuncional', titulo: 'Pilates Funcional', 
-      descripcion: 'Mejora tu capacidad para moverte con seguridad, fuerza y sin dolor en todas tus actividades cotidianas'}
-  ]
+  if (loading) {
+    return (
+      <div className="pages-section text-center py-5">
+        <div className="spinner-border text-secondary" role="status" />
+      </div>
+    )
+  }
 
   return (
-    
     <div className='pages-section'>
-      <div className='titulo-pagina' id=''>Disciplinas</div>
-      <Disciplina
-        titulo="Musculación"
-        descripcion="Fortalece y define tu cuerpo con rutinas personalizadas, enfocadas en fuerza, resistencia y tonificación muscular"
-        precios={preciosMusculacion}
-        fotos={fotosMusculacion}
-      />
+      <div className='titulo-pagina'>Disciplinas</div>
 
-      <Disciplina
-        titulo="Pilates"
-        descripcion="Conecta cuerpo y mente con ejercicios que mejoran tu postura,
-         flexibilidad y control corporal"
-        subactividad="Pilates Funcional"
-        precios={preciosPilates}
-        fotos={fotosPilates}
-         modalData={modalPilates}
-        reverse
-      />
+      {disciplinas.length === 0 && (
+        <p className="text-center text-muted py-5">No hay disciplinas disponibles.</p>
+      )}
 
-      <Disciplina
-        titulo="Funcional"
-        descripcion="Trabaja con movimientos naturales para ganar fuerza, agilidad y rendimiento en tu día a día."
-        subactividad="Funcional Mixto - Adultos Mayores - Adolescentes - Kids"
-        precios={preciosFuncional}
-        fotos={fotosFuncional}
-        modalData={modalFuncional}
-      />
-      <Disciplina
-        titulo="Judo"
-        descripcion="Entrena la fuerza del respeto y la disciplina para caer, levantarte y superar tus límites"
-        precios={preciosJudo}
-        fotos={fotosJudo}
-        reverse
-      />
-
-       <Disciplina
-        titulo="Entrenamiento Deportivo"
-        descripcion="Espacio perfecto para alcanzar tus objetivos deportivos, trabajando tu  potencia, pliometria y resistencia"        
-        precios={preciosMusculacion}
-        fotos={fotosEntrenamiento}
-      />
-      <Disciplina
-        titulo="Natación"
-        descripcion="Entrena todo tu cuerpo en el agua, mejora tu capacidad pulmonar, resistencia y técnica."        
-        subactividad="Natación Adultos - Adultos Iniciales - Niños - Pileta Libre - Hidrogimnasia"
-        
-        matricula="Matrícula (50% de la cuota mensual) se abona una vez al año"
-        fotos={fotosNatacion}
-        modalData={modalNatacion}
-        reverse
-      />
-
-  
+      {disciplinas.map((d, index) => (
+        <Disciplina
+          key={d.id_disciplina}
+          titulo={d.nombre_d}
+          descripcion={d.descripcion_d}
+          subactividad={transformarSubactividad(d.actividades)}
+          precios={transformarPrecios(d)}
+          fotos={transformarImagenes(d.imagenes, d.imagen_d)}
+          actividades={d.actividades}
+          modalData={transformarModalData(d.actividades)}
+          reverse={index % 2 !== 0}
+        />
+      ))}
     </div>
   )
 }

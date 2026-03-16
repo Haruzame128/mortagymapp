@@ -351,3 +351,19 @@
     justify-content: center;
   }
 }
+
+.carrusel-actividad {
+  min-height: 400px;
+  align-items: stretch;
+}
+
+.foto.grande.foto-unica {
+  width: 80%;
+  height: 100%;
+  min-height: 300px;
+  aspect-ratio: unset;
+}
+
+.laterales.laterales-centrado {
+  justify-content: center;
+}

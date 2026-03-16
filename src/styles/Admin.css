@@ -82,3 +82,8 @@
   text-align: center;
 }
 
+/* Estilos para el modal de SweetAlert2 */
+
+.swal2-container {
+  z-index: 99999 !important;
+}

@@ -1,48 +1,56 @@
+
 import { useState } from "react";
 
-const preciosNatacion = {
-  "Pileta libre": {
-    clase: { debito: 22000, efectivo: 18000 },
-    1: { debito: 66000, efectivo: 53000 },
-    2: { debito: 73000, efectivo: 60000 },
-    3: { debito: 81000, efectivo: 66000 },
-    4: { debito: 90000, efectivo: 70000 },
-    5: { debito: 97000, efectivo: 79000 },
-    6: { debito: 105000, efectivo: 86000 },
-  },
-  "Con profesor": {
-    clase: { debito: 20000, efectivo: 18000 },
-    1: { debito: 66000, efectivo: 64000 },
-    2: { debito: 73000, efectivo: 69000 },
-    3: { debito: 81000, efectivo: 76000 },
-    4: { debito: 90000, efectivo: 87000 },
-    5: { debito: 97000, efectivo: 92000 },
-    6: { debito: 105000, efectivo: 103000 },
-  },
-  Hidrogym: {
-    clase: { debito: 22000, efectivo: 18000 },
-    2: { debito: 80000, efectivo: 50200 },
-    3: { debito: 88000, efectivo: 55800 },
-    5: { debito: 103000, efectivo: 62000 },
-  },
-};
+// Transforma los precios de una actividad de natación al formato
+// { 1: { efectivo, debito, profesor }, ..., clase: { efectivo, debito } }
+function transformarPreciosNatacion(actividad) {
+  const precios = {}
 
-const TablaNatacion = ({ matricula }) => {
-  const [categoria, setCategoria] = useState("Pileta libre");
-  const [dias, setDias] = useState(1);
+  for (let i = 1; i <= 6; i++) {
+    const ef   = Number(actividad[`precio_${i}`])          || 0
+    const deb  = Number(actividad[`precio_${i}_debito`])   || 0
+    const prof = Number(actividad[`precio_${i}_profesor`]) || 0
+    if (ef > 0 || deb > 0 || prof > 0) {
+      precios[String(i)] = { efectivo: ef, debito: deb, profesor: prof }
+    }
+  }
 
-  const preciosCategoria = preciosNatacion[categoria];
-  const diasDisponibles = Object.keys(preciosCategoria);
+  if (Number(actividad.precio_dia) > 0 || Number(actividad.precio_dia_debito) > 0) {
+    precios['clase'] = {
+      efectivo: Number(actividad.precio_dia)        || 0,
+      debito:   Number(actividad.precio_dia_debito) || 0,
+      profesor: 0,
+    }
+  }
+
+  return precios
+}
+
+const TablaNatacion = ({ actividades = [], matricula }) => {
+  const [categoriaIdx, setCategoriaIdx] = useState(0)
+  const [dias, setDias] = useState('1')
+
+  if (!actividades || actividades.length === 0) return null
+
+  const categoriaActual  = actividades[categoriaIdx]
+  const preciosCategoria = transformarPreciosNatacion(categoriaActual)
+  const diasDisponibles  = Object.keys(preciosCategoria)
+
+  // Si el día seleccionado no existe en la nueva categoría, resetear al primero
+  const diaValido = diasDisponibles.includes(dias) ? dias : diasDisponibles[0]
+
+  const esNatacion = categoriaActual.nombre_a?.toLowerCase().includes('nataci')
+  const tieneProfesor = esNatacion && Object.values(preciosCategoria).some(p => p.profesor > 0)
 
   return (
     <div className="precios">
-        
-        <table className="tabla-precios natacion table table-borderless">
+      <table className="tabla-precios natacion table table-borderless">
         <thead>
           <tr>
             <th>Actividad</th>
             <th>Días por semana</th>
-            <th>Efectivo</th>
+            <th>Efectivo{tieneProfesor ? ' (Libre)' : ''}</th>
+            {tieneProfesor && <th>Efectivo (Con Profesor)</th>}
             <th>Débito/Transferencia</th>
           </tr>
         </thead>
@@ -50,57 +58,66 @@ const TablaNatacion = ({ matricula }) => {
           <tr>
             <td data-label="Actividad">
               <select
-                value={categoria}
+                value={categoriaIdx}
                 onChange={(e) => {
-                  setCategoria(e.target.value);
-                  setDias(1);
+                  setCategoriaIdx(Number(e.target.value))
+                  setDias('1')
                 }}
               >
-                {Object.keys(preciosNatacion).map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
+                {actividades.map((a, i) => (
+                  <option key={a.id_actividad} value={i}>
+                    {a.nombre_a}
                   </option>
                 ))}
               </select>
             </td>
+
             <td data-label="Días por semana">
-              <select
-                value={dias}
-                onChange={(e) => setDias(e.target.value)}
-              >
+              <select value={diaValido} onChange={(e) => setDias(e.target.value)}>
                 {diasDisponibles.map((d) => (
                   <option key={d} value={d}>
-                    {d === "clase"
-                    ? "1 clase"
-                    : `${d} ${d === "1" ? "vez" : "veces"} por semana`}
+                    {d === 'clase'
+                      ? '1 clase por día'
+                      : `${d} ${d === '1' ? 'vez' : 'veces'} por semana`}
                   </option>
                 ))}
               </select>
             </td>
+
             <td data-label="Efectivo">
-              {preciosCategoria[dias]?.efectivo
-                ? `$${preciosCategoria[dias].efectivo.toLocaleString()}` : "--"}
+              {preciosCategoria[diaValido]?.efectivo > 0
+                ? `$${preciosCategoria[diaValido].efectivo.toLocaleString()}`
+                : '—'}
             </td>
+
+            {tieneProfesor && (
+              <td data-label="Efectivo (Con Profesor)">
+                {preciosCategoria[diaValido]?.profesor > 0
+                  ? `$${preciosCategoria[diaValido].profesor.toLocaleString()}`
+                  : '—'}
+              </td>
+            )}
+
             <td data-label="Débito/Transferencia">
-              {preciosCategoria[dias]?.debito
-                ? `$${preciosCategoria[dias].debito.toLocaleString()}`
-                : "—"}
+              {preciosCategoria[diaValido]?.debito > 0
+                ? `$${preciosCategoria[diaValido].debito.toLocaleString()}`
+                : '—'}
             </td>
           </tr>
         </tbody>
         <tfoot>
-            <tr>
-              <td colSpan="2">
-                <p className="matricula text-muted">{matricula}</p>
-              </td>
-              <td colSpan="2">
-                <p className="text-muted">Con tarjeta de crédito: +25%</p>
-              </td>
-            </tr>
+          <tr>
+            <td colSpan={tieneProfesor ? 3 : 2}>
+              <p className="matricula text-muted">{matricula}</p>
+            </td>
+            <td colSpan="2">
+              <p className="text-muted">Con tarjeta de crédito: +25%</p>
+            </td>
+          </tr>
         </tfoot>
       </table>
     </div>
-  );
-};
+  )
+}
 
-export default TablaNatacion;
+export default TablaNatacion
