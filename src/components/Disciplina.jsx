@@ -14,15 +14,15 @@ export default function Disciplina({
   fotos, 
   actividades = [],
   reverse = false,
-  modalData = [],
+  //modalData = [],
   matricula
 }) {
 
   const opcionesDias = Object.keys(precios);
   const [dias, setDias] = useState(opcionesDias[0] || "");
   const [central, setCentral] = useState(fotos[0]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(modalData[0]?.id || '');
+  //const [isModalOpen, setIsModalOpen] = useState(false);
+  //const [activeTab, setActiveTab] = useState(modalData[0]?.id || '');
 
   const navigate = useNavigate();
   const irAHorarios = () => navigate("/horarios", { state: { filtro: titulo } });
@@ -107,7 +107,7 @@ export default function Disciplina({
                 <button className="btn-principal btn btn-sm" type="button" onClick={irAHorarios}>
                   <span>HORARIO</span>
                 </button>
-                {modalData && modalData.length > 0 && (
+                {/*modalData && modalData.length > 0 && (
                   <>
                     <button type="button" className="btn-secundario btn btn-sm"
                       onClick={() => setIsModalOpen(true)}>
@@ -155,7 +155,7 @@ export default function Disciplina({
                       </div>
                     </Modal>
                   </>
-                )}
+                )*/}
               </div>
             </div>
           </div>

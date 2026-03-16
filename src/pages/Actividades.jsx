@@ -55,6 +55,16 @@ function transformarModalData(actividades) {
       descripcion: a.descripcion_a,
     }))
 }
+// Solo actividades que tienen al menos un precio cargado
+function actividadesConPrecios(actividades) {
+  return actividades.filter(a => {
+    for (let i = 1; i <= 6; i++) {
+      if (Number(a[`precio_${i}`]) > 0 || Number(a[`precio_${i}_debito`]) > 0) return true
+    }
+    if (Number(a.precio_dia) > 0 || Number(a.precio_dia_debito) > 0) return true
+    return false
+  })
+}
 
 // Arma el string de subactividades: "Adultos - Niños - Hidrogimnasia"
 function transformarSubactividad(actividades) {
@@ -94,10 +104,10 @@ export default function Actividades() {
           key={d.id_disciplina}
           titulo={d.nombre_d}
           descripcion={d.descripcion_d}
-          subactividad={transformarSubactividad(d.actividades)}
+          subactividad={transformarSubactividad(actividadesConPrecios(d.actividades))}
           precios={transformarPrecios(d)}
           fotos={transformarImagenes(d.imagenes, d.imagen_d)}
-          actividades={d.actividades}
+          actividades={actividadesConPrecios(d.actividades)}
           modalData={transformarModalData(d.actividades)}
           reverse={index % 2 !== 0}
         />
