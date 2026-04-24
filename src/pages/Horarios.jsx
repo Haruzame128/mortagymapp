@@ -8,10 +8,10 @@ import logo from "../assets/logo_sf.png";
 import { horariosPublicoApi } from "../services/api";
 
 export default function Horarios() {
-  const [horarios,     setHorarios]     = useState([]);
-  const [disciplinas,  setDisciplinas]  = useState([]);
-  const [filtro,       setFiltro]       = useState('');
-  const [loading,      setLoading]      = useState(true);
+  const [horarios, setHorarios] = useState([]);
+  const [disciplinas, setDisciplinas] = useState([]);
+  const [filtro, setFiltro] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const location = useLocation();
 
@@ -28,7 +28,7 @@ export default function Horarios() {
         ? filtroNav
         : disciplinasData[0] || ''
       );
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => { }).finally(() => setLoading(false));
   }, []);
 
   // Horas únicas ordenadas
@@ -88,7 +88,6 @@ export default function Horarios() {
       <div className="spinner-border text-secondary" role="status" />
     </section>
   );
-
   return (
     <>
       <img src={logo} id="logo" style={{ display: 'none' }} />
@@ -130,17 +129,39 @@ export default function Horarios() {
                       return (
                         <td key={`${dia}-${hora}`}>
                           {actividades.length > 0 ? (
-                            actividades.map((act, i) => (
+                            Object.values(
+                              actividades.reduce((acc, act) => {
+                                if (!acc[act.actividad]) {
+                                  acc[act.actividad] = {
+                                    actividad: act.actividad,
+                                    horarioReal: act.horarioReal,
+                                    profes: [],
+                                    cupo_lleno: act.cupo_lleno
+                                  };
+                                }
+                                if (act.profe) {
+                                  acc[act.actividad].profes.push(act.profe);
+                                }
+                                return acc;
+                              }, {})
+                            ).map((grupo, i) => (
                               <div key={i} className="mb-1">
-                                <p className="nombre-actividad" translate="no">{act.actividad}</p>
-                                {act.horarioReal && (
-                                  <small className="horario-real">{act.horarioReal}</small>
+                                <p className="nombre-actividad" translate="no">{grupo.actividad}</p>
+
+                                {grupo.horarioReal && (
+                                  <small className="horario-real d-block">{grupo.horarioReal}</small>
                                 )}
-                                {act.profe && (
-                                  <p className="profesor text-muted small">{act.profe}</p>
-                                )}
-                                {act.cupo_lleno && (
-                                  <span className="badge bg-danger" style={{ fontSize: '10px' }}>SIN CUPO</span>
+
+                                {grupo.profes.map((profe, idx) => (
+                                  <p key={idx} className="profesor text-muted small m-0">
+                                    {profe}
+                                  </p>
+                                ))}
+
+                                {grupo.cupo_lleno && (
+                                  <span className="badge bg-danger" style={{ fontSize: '10px' }}>
+                                    SIN CUPO
+                                  </span>
                                 )}
                               </div>
                             ))

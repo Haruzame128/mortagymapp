@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem('user')
     setToken(null)
     setUser(null)
-    navigate('/login')
+    window.location.href = '/'
   }
 
   // Helpers de rol para usar en componentes

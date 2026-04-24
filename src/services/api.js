@@ -113,10 +113,11 @@ export const disciplinasApi = {
 
 // ── Admin — Actividades ──────────────────────────────────────────
 export const actividadesApi = {
-  getAll:  ()         => get('/api/admin/actividades'),
-  create:  (data)     => post('/api/admin/actividades', data),
-  update:  (id, data) => put(`/api/admin/actividades/${id}`, data),
-  remove:  (id)       => del(`/api/admin/actividades/${id}`),
+  getByDisciplina: (id)       => get(`/api/admin/actividades?disciplina=${id}`),
+  create:          (data)     => post('/api/admin/actividades', data),
+  update:          (id, data) => put(`/api/admin/actividades/${id}`, data),
+  toggleActivo:    (id, activo) => put(`/api/admin/actividades/${id}/activo`, { activo }),
+  remove:          (id)       => del(`/api/admin/actividades/${id}`),
 }
 
 // ── Admin — Horarios ─────────────────────────────────────────────
@@ -135,7 +136,7 @@ export const serviciosApi = {
   update:      (id, formData) => putForm(`/api/servicios/${id}`, formData),
 }
 
-// ── Reservas ─────────────────────────────────────────────────────
+// ── Reservas ────────────────────────────────────────────────────
 export const reservasApi = {
   disponibles:   (dia)  => get(`/api/reservas/musculacion/disponibles?dia=${dia}`),
   reservarMuscu: (data) => post('/api/reservas/musculacion', data),

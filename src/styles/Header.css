@@ -87,6 +87,24 @@
   text-decoration: none;
 }
 
+.nav-btn-outline {
+  background: transparent;
+  border: 1px solid var(--color-secondary);
+  color: var(--color-secondary);
+  padding: 0.4rem 1rem;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-btn-outline:hover {
+  background: var(--color-secondary);
+  color: #fff;
+}
+
 @media (max-width: 991px) {
   .navbar-collapse {
     position: absolute;
@@ -220,3 +238,4 @@
   text-align: center;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
+
