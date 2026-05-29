@@ -122,10 +122,11 @@ export const actividadesApi = {
 
 // ── Admin — Horarios ─────────────────────────────────────────────
 export const horariosApi = {
-  getAll:  ()         => get('/api/admin/horarios'),
-  create:  (data)     => post('/api/admin/horarios', data),
-  update:  (id, data) => put(`/api/admin/horarios/${id}`, data),
-  remove:  (id)       => del(`/api/admin/horarios/${id}`),
+  getAll:         ()         => get('/api/admin/horarios'),
+  getByActividad: (id)       => get(`/api/admin/horarios?actividad=${id}`),
+  create:         (data)     => post('/api/admin/horarios', data),
+  update:         (id, data) => put(`/api/admin/horarios/${id}`, data),
+  remove:         (id)       => del(`/api/admin/horarios/${id}`),
 }
 
 // ── Servicios ────────────────────────────────────────────────────
