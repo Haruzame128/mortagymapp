@@ -166,3 +166,9 @@ export const horariosPublicoApi = {
   getHorarios: () => get("/api/horarios"),
   getDisciplinas: () => get("/api/horarios/disciplinas"),
 };
+
+// ── Perfil ───────────────────────────────────────────────────────
+export const perfilApi = {
+  getMe:           () => get('/api/perfil/me'),
+  getHorariosMus:  () => get('/api/perfil/horarios-musculacion'),
+};

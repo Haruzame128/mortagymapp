@@ -20,6 +20,7 @@ import ActividadUsuario from './pages/usuario/ActividadUsuario'
 import VerRutina from './pages/usuario/VerRutina'
 import HorarioUsuario from './pages/usuario/HorarioUsuario'
 import Reagendar from './pages/usuario/Reagendar'
+import Perfil from './pages/Perfil'
 
 /* Profesor */
 import ProfesorLayout from './layouts/ProfesorLayout'
@@ -72,7 +73,7 @@ function AppContent() {
           {/* ── Perfil (Cliente) ── */}
           <Route element={<ProtectedRoute roles={['Cliente']} />}>
             <Route path="/perfil" element={<UsuarioLayout />}>
-              <Route index element={<Navigate to="actividad-horario" replace />} />
+              <Route index element={<Perfil />} />
               <Route path="actividad-horario" element={<ActividadUsuario />} />
               <Route path="ver-rutina"        element={<VerRutina />} />
               <Route path="horario-usuario"   element={<HorarioUsuario />} />

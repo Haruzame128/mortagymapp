@@ -1,230 +1,148 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { perfilApi, reservasApi } from "../../services/api";
+import '../../styles/perfiles.css';
+
+
+const ORDEN_DIAS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
 
 export default function Reagendar() {
 
-    const fechaInscripcion = new Date("2026-02-5");
+    const [horarios, setHorarios] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [turnoSeleccionado, setTurnoSeleccionado] = useState(null) // { id_reserva, id_horario, dia_h, hora_h }
+    const navigate = useNavigate()
 
-    const [misTurnos] = useState([
-        { dia: "2026-02-20", hora: "10:00" },
-        { dia: "2026-02-23", hora: "10:00" },
-        { dia: "2026-02-25", hora: "10:00" },
-        { dia: "2026-02-27", hora: "10:00" },
-    ]);
+    const cargarHorarios = () => {
+        setLoading(true)
+        perfilApi.getHorariosMus()
+            .then(setHorarios)
+            .catch(console.error)
+            .finally(() => setLoading(false))
+    }
 
-    const esMiTurno = (dia, hora) =>
-        misTurnos.some(
-            (t) => t.dia === dia && t.hora === hora
-        );
+    useEffect(() => { cargarHorarios() }, [])
 
-    const [turnoSeleccionado, setTurnoSeleccionado] = useState(null);
-    
-    /* Calendario */
+    if (loading) return (
+        <div className="text-center py-5">
+            <div className="spinner-border text-secondary" role="status" />
+        </div>
+    )
 
-    const fechaFin = new Date(fechaInscripcion);
-    fechaFin.setMonth(fechaFin.getMonth() + 1);
-    fechaFin.setDate(fechaFin.getDate() - 1);
+    // Días y horas únicos que tienen horarios cargados
+    const dias = ORDEN_DIAS.filter(d => horarios.some(h => h.dia_h === d))
+    const horas = [...new Set(horarios.map(h => h.hora_h?.slice(0, 5)))].sort()
 
-    const HORARIO_INICIO = 9;
-    const HORARIO_FIN = 22;
+    const getHorario = (dia, hora) =>
+        horarios.find(h => h.dia_h === dia && h.hora_h?.slice(0, 5) === hora)
 
-    const horas = Array.from(
-        { length: HORARIO_FIN - HORARIO_INICIO },
-        (_, i) => `${HORARIO_INICIO + i}:00`
-    );
-
-    const [fechaBase, setFechaBase] = useState(new Date());
-
-    const obtenerSemana = (fechaReferencia) => {
-        //const hoy = new Date();
-        const diaSemana = fechaReferencia.getDay() || 7;
-        const lunes = new Date(fechaReferencia);
-        lunes.setDate(fechaReferencia.getDate() - diaSemana + 1);
-
-        return Array.from({ length: 5 }, (_, i) => {
-            const d = new Date(lunes);
-            d.setDate(lunes.getDate() + i);
-            return d;
-        });
-    };
-
-    const semana = obtenerSemana(fechaBase);
-
-    const cambiarSemana = (dias) => {
-        setFechaBase((prevFecha) => {
-
-            const nuevaFecha = new Date(prevFecha);
-            nuevaFecha.setDate(prevFecha.getDate() + dias);
-            if (
-                nuevaFecha >= fechaInscripcion &&
-                nuevaFecha <= fechaFin
-            ) {
-                return nuevaFecha;
-            }
-            return prevFecha;
-        });
-    };
-
-    const diaPasado = (fechaISO) => {
-        const [y, m, d] = fechaISO.split("-").map(Number);
-        const fecha = new Date(y, m - 1, d);
-
-        const hoyLocal = new Date();
-        hoyLocal.setHours(0, 0, 0, 0);
-
-        return fecha < hoyLocal;
-    };
-
-    const horaPasadaHoy = (fechaISO, hora) => {
-        const ahora = new Date();
-        const [h] = hora.split(":");
-
-        if (fechaISO !== formatearFecha(ahora)) return false;
-
-        return parseInt(h) <= ahora.getHours();
-
-    };
-
-    const [turnosOcupados] = useState([
-        { dia: "2026-01-28", hora: "10:00" },
-        { dia: "2026-01-29", hora: "14:00" },
-    ]);
-    
-    const formatearFecha = (date) =>{
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        const d = String(date.getDate()).padStart(2, "0");
-        return `${y}-${m}-${d}`;
-    };
-
-    const estaOcupado = (dia, hora) =>
-        turnosOcupados.some(
-            (t) => t.dia === dia && t.hora === hora
-    );
-    const estaBloqueado = (fechaISO, hora) => {
-            return (
-                diaPasado(fechaISO) ||
-                horaPasadaHoy(fechaISO, hora)
-            );
-        };
-
-    const confirmarCambioTurno = ({ anterior, nuevo }) => {
+    const confirmarCambio = (nuevo) => {
         Swal.fire({
-            title: "Cambiar turno",
+            title: 'Cambiar turno',
             html: `
-                <p><strong>De:</strong> ${anterior.fecha} ${anterior.hora}</p>
-                <p><strong>A:</strong> ${nuevo.fecha} ${nuevo.hora}</p>
-                `,
-            text: "¿Querés cambiar solo por este día o todos los turnos de la semana?",
-            icon: "question",
+        <p><strong>De:</strong> ${turnoSeleccionado.dia_h} ${turnoSeleccionado.hora_h?.slice(0, 5)}hs</p>
+        <p><strong>A:</strong> ${nuevo.dia_h} ${nuevo.hora_h?.slice(0, 5)}hs</p>
+      `,
+            icon: 'question',
             showCancelButton: true,
-            showDenyButton: true,
-            confirmButtonText: "Solo este día",
-            denyButtonText: "Toda la semana",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#0093D8",
-            denyButtonColor: "#A54E9E",
-            cancelButtonColor: "#6c757d"
-        }).then((result) => {
-            if (result.isConfirmed) {
-            
-            console.log("Cambiar solo este día", anterior, nuevo);
-            } else if (result.isDenied) {
-            
-            console.log("Cambiar toda la semana", anterior, nuevo);
+            confirmButtonText: 'Confirmar cambio',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0093D8',
+            cancelButtonColor: '#6c757d',
+        }).then(async (result) => {
+            if (!result.isConfirmed) return
+            try {
+                // 1. Cancelar reserva actual
+                await reservasApi.cancelarMuscu(turnoSeleccionado.id_reserva)
+                // 2. Crear nueva reserva
+                await reservasApi.reservarMuscu({ id_horario: nuevo.id_horario })
+                Swal.fire('¡Listo!', 'Tu turno fue cambiado correctamente', 'success')
+                setTurnoSeleccionado(null)
+                cargarHorarios()
+            } catch (err) {
+                Swal.fire('Error', err.message || 'No se pudo cambiar el turno', 'error')
             }
-        });
-    };
+        })
+    }
 
-    return(
+    return (
         <div className="pages-section reagendar">
-            <h5 className="card-title mb-3">Reagendar Turno</h5>
-            <div className="d-flex justify-content-between mb-3">
-                <button
-                    className="btn btn-outline-secondary"
-                    onClick={() => cambiarSemana(-7) }
-                >
-                    ← anterior
-                </button>
-
-                <button
-                    className="btn btn-outline-secondary"
-                    onClick={() => cambiarSemana(7) }
-                >
-                    siguiente →
+            <div className="d-flex justify-content-start mb-3">
+                <button className="btn btn-outline-secondary" onClick={() => navigate('/perfil/horario-usuario')}>
+                    <i className="ri-arrow-left-line me-1"></i> Volver
                 </button>
             </div>
+            <h5 className="card-title mb-3">Reagendar Turno</h5>
+
+            {turnoSeleccionado && (
+                <div className="alert alert-info py-2 mb-3">
+                    <i className="ri-information-line me-2"></i>
+                    Turno seleccionado: <strong>{turnoSeleccionado.dia_h} {turnoSeleccionado.hora_h?.slice(0, 5)}hs</strong>
+                    — ahora hacé click en un turno disponible para cambiarlo.
+                    <button className="btn btn-sm btn-outline-secondary ms-3"
+                        onClick={() => setTurnoSeleccionado(null)}>
+                        Cancelar
+                    </button>
+                </div>
+            )}
 
             <table className="table table-bordered text-center align-middle tabla-perfiles">
                 <thead className="table-light">
-                    <tr className="a">
+                    <tr>
                         <th>Hora</th>
-                        {semana.map((dia) => (
-                            <th key={dia}>
-                                {dia.toLocaleDateString("es-AR", {
-                                    weekday: "short",
-                                    day: "numeric",
-                                })}
-                            </th>
-                        ))}
+                        {dias.map(dia => <th key={dia}>{dia}</th>)}
                     </tr>
                 </thead>
-
                 <tbody>
-                    {horas.map((hora) => (
-                    <tr key={hora}>
-                        <td>{hora}</td>
-                        {semana.map((dia) => {
-                            const fecha = formatearFecha(dia);
-                            const ocupado = estaOcupado(fecha, hora);
-                            const bloqueado = estaBloqueado(fecha, hora);
-                            const miTurno = esMiTurno(fecha, hora);
+                    {horas.map(hora => (
+                        <tr key={hora}>
+                            <td className="fw-bold">{hora}</td>
+                            {dias.map(dia => {
+                                const h = getHorario(dia, hora)
+                                if (!h) return <td key={`${dia}-${hora}`}>-</td>
 
-                            return (
-                                <td
-                                    key={fecha + hora}
-                                    className={
-                                        turnoSeleccionado?.fecha === fecha &&
-                                        turnoSeleccionado?.hora === hora
-                                            ? "mi-turno seleccionado"
-                                            : miTurno
-                                            ? "mi-turno"
-                                            : bloqueado
-                                            ? "bloqueado"
-                                            : ocupado
-                                            ? "ocupado"
-                                            : "disponible"
-                                    }
-                                    onClick={() => {
-                                        if (miTurno) {
-                                            setTurnoSeleccionado({ fecha, hora });
-                                        } 
-                                        else if (
-                                            turnoSeleccionado &&
-                                            !ocupado &&
-                                            !bloqueado
-                                        ) {
-                                            confirmarCambioTurno({
-                                            anterior: turnoSeleccionado,
-                                            nuevo: { fecha, hora }
-                                            });
-                                        }
-                                    }}
-                                >
-                                {miTurno
-                                    ? "Tu turno"
-                                    : bloqueado
-                                    ? "No disponible"
-                                    : ocupado
-                                    ? "Ocupado"
-                                    : "Disponible"}
-                                </td>
-                            );
-                        })}
-                    </tr>
+                                const esMio = h.es_mi_reserva === true || h.es_mi_reserva === 'true'
+                                const lleno = h.cupo_actual >= h.cupo_maximo
+                                const seleccionado = turnoSeleccionado?.id_horario === h.id_horario
+
+                                let clase = 'disponible'
+                                let texto = `Disponible (${h.cupo_maximo - h.cupo_actual})`
+                                if (esMio) { clase = seleccionado ? 'mi-turno seleccionado' : 'mi-turno'; texto = 'Tu turno' }
+                                else if (lleno) { clase = 'ocupado'; texto = 'Lleno' }
+
+                                return (
+                                    <td key={`${dia}-${hora}`}
+                                        className={clase}
+                                        onClick={() => {
+                                            if (esMio) {
+                                                setTurnoSeleccionado(
+                                                    seleccionado ? null : {
+                                                        id_reserva: Number(h.id_reserva),
+                                                        id_horario: h.id_horario,
+                                                        dia_h: h.dia_h,
+                                                        hora_h: h.hora_h,
+                                                    }
+                                                )
+                                            } else if (turnoSeleccionado && !lleno) {
+                                                confirmarCambio(h)
+                                            }
+                                        }}
+                                    >
+                                        {texto}
+                                    </td>
+                                )
+                            })}
+                        </tr>
                     ))}
                 </tbody>
             </table>
+
+            <div className="d-flex gap-3 mt-3 small text-muted justify-content-center flex-wrap">
+                <span><span className="badge mi-turno px-2 me-1">&nbsp;</span> Tu turno</span>
+                <span><span className="badge disponible px-2 me-1">&nbsp;</span> Disponible</span>
+                <span><span className="badge ocupado px-2 me-1">&nbsp;</span> Lleno</span>
+            </div>
         </div>
     )
-};
+}

@@ -357,14 +357,15 @@ export default function Alumnos() {
           </button>
         </div>
       </Modal>
+      <HuellaModal
+        isOpen={modalHuella}
+        status={enroll.status}
+        step={enroll.step}
+        error={enroll.error}
+        onClose={handleCerrarHuella}
+        onRetry={() => clienteHuella && enroll.start(String(clienteHuella.dni_u))}
+      />
     </>
   );
-  <HuellaModal
-    isOpen={modalHuella}
-    status={enroll.status}
-    step={enroll.step}
-    error={enroll.error}
-    onClose={handleCerrarHuella}
-    onRetry={() => clienteHuella && enroll.start(String(clienteHuella.dni_u))}
-  />
+
 }

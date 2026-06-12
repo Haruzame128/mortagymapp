@@ -100,6 +100,11 @@
   margin: 10px auto;
 }
 
+.btn-reagendar{
+  width: auto;
+  margin: 5px auto;
+}
+
 
 .disponible:hover{
   background-color: lightgreen;
@@ -152,6 +157,7 @@
   padding: 10px 20px;
   background-color: transparent;
   width: 350px;
+  flex-shrink: 0;
 }
 
 .sub-head th {

@@ -80,7 +80,7 @@ export default function Navbar({ tipoBanner = "normal" }) {
         <section className="banner-alt position-relative">
           <img src={fondo} alt="Banner alternativo" className="w-100 banner-img" />
           <h1 className="banner-alt-text fst-italic fw-bold">
-            Nombre de Usuario
+            {user?.nombre || 'Mi Perfil'}
           </h1>
         </section>
       )}
