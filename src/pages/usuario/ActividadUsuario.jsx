@@ -31,7 +31,13 @@ export default function ActividadUsuario() {
                     horarios: [],
                     entradas: Number(i.entradas_restantes || 0),
                     cuota: i.pago_s || false,
-                    fecha_s: i.fecha_s,
+                    vencimiento: i.fecha_s ? (() => {
+                        const f = new Date(i.fecha_s)
+                        f.setMonth(f.getMonth() + 1)
+                        const dia = String(f.getDate()).padStart(2, '0')
+                        const mes = String(f.getMonth() + 1).padStart(2, '0')
+                        return `${dia}/${mes}`
+                    })() : null,
                 }
             }
             if (i.dia_h && i.hora_h) {
@@ -40,6 +46,7 @@ export default function ActividadUsuario() {
             return acc
         }, {})
     )
+    console.log('actividadesAgrupadas:', actividadesAgrupadas)
 
     return (
         <div className="contenido-actividades text-center">
@@ -47,18 +54,16 @@ export default function ActividadUsuario() {
             {/* ESTADO */}
             <div className="estado-user justify-content-center">
                 <EstadoItem
-                    icon={perfil?.cuota_al_dia ? "✅" : "❌"}
-                    titulo={perfil?.cuota_al_dia ? "Cuota al día" : "Cuota vencida"}
-                    vencimiento={null}
-                />
-                <EstadoItem
                     icon={perfil?.tiene_ficha ? "✅" : "❌"}
                     titulo={perfil?.tiene_ficha ? "Ficha médica presentada" : "Falta Ficha Médica"}
-                    vencimiento={
+                    /*vencimiento={
                         perfil?.venc_ficha_medica
-                            ? new Date(perfil.venc_ficha_medica).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
+                            ? (() => {
+                                const f = new Date(perfil.venc_ficha_medica)
+                                return `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}`
+                            })()
                             : null
-                    }
+                    }*/
                 />
             </div>
 
@@ -73,9 +78,7 @@ export default function ActividadUsuario() {
                             horario={a.horarios.length > 0 ? a.horarios.join(' / ') : 'Sin horario asignado'}
                             turnos={a.entradas}
                             cuota={a.cuota}
-                            vencimiento={a.fecha_s
-                                ? new Date(a.fecha_s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
-                                : null}
+                            vencimiento={a.vencimiento}
                         />
                     ))
                 }

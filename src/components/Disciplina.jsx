@@ -3,6 +3,8 @@ import React, { useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import Modal from 'react-modal';
 import TablaNatacion from './TablaNatacion';
+import '../styles/Actividades.css';
+
 
 Modal.setAppElement('#root'); 
 
@@ -34,7 +36,7 @@ export default function Disciplina({
   return (
     <>
       <section className="contenedor-disciplina py-12 py-lg-24 py-xl-32">
-                  <div className="row align-items-stretch">
+                  <div className="row align-items-center">
 
           {/* Info */}
           <div className={`col-lg-6 ${reverse ? "order-lg-2" : "order-lg-1"}`}>
@@ -161,7 +163,7 @@ export default function Disciplina({
           </div>
 
           {/* Carrusel */}
-          <div className={`carrusel-actividad col-lg-6 h-100 ${reverse ? "order-lg-1" : "order-lg-2"}`}>
+          <div className={`carrusel-actividad col-lg-6 ${reverse ? "order-lg-1" : "order-lg-2"}`}>
             {tieneUnaFoto ? (
               <div className="d-flex justify-content-center w-100" style={{ alignSelf: 'center', minHeight: '400px', alignItems: 'center' }}>
                 <div className="foto grande foto-unica">

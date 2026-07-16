@@ -5,9 +5,9 @@ const EstadoItem = ({ icon, titulo, vencimiento }) => {
 
       <div className="d-flex flex-column text-start">
         <span className="fs-6">{titulo}</span>
-        <small className="text-muted">
+        {/* <small className="text-muted">
           Vencimiento: {vencimiento || "---"}
-        </small>
+        </small> */}
       </div>
     </div>
   );

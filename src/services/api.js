@@ -169,6 +169,17 @@ export const horariosPublicoApi = {
 
 // ── Perfil ───────────────────────────────────────────────────────
 export const perfilApi = {
-  getMe:           () => get('/api/perfil/me'),
-  getHorariosMus:  () => get('/api/perfil/horarios-musculacion'),
+  getMe:           ()        => get('/api/perfil/me'),
+  getHorariosMus:  ()        => get('/api/perfil/horarios-musculacion'),
+  getRutina:       (mes)     => get(`/api/perfil/rutina?mes=${mes}`),
+  guardarProgreso: (data)    => post('/api/perfil/progreso', data),
 };
+
+// ── Profesor ─────────────────────────────────────────────────────
+export const profesorApi = {
+  getAlumnos:    ()                => get('/api/profesor/alumnos'),
+  getEjercicios: ()                => get('/api/profesor/ejercicios'),
+  getRutina:     (id, mes, semana) => get(`/api/profesor/alumnos/${id}/rutina?mes=${mes}&semana=${semana}`),
+  guardarRutina: (data)            => post('/api/profesor/rutinas', data),
+  getProgreso:   (id, mes)         => get(`/api/profesor/alumnos/${id}/progreso?mes=${mes}`),
+}

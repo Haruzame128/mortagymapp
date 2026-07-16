@@ -4,10 +4,10 @@ import { useAuth } from "../context/AuthContext";
 import { perfilApi } from "../services/api";
 
 export default function Perfil() {
-  const navigate         = useNavigate();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [perfil,   setPerfil]   = useState(null);
-  const [loading,  setLoading]  = useState(true);
+  const [perfil, setPerfil] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     perfilApi.getMe()
@@ -45,7 +45,10 @@ export default function Perfil() {
           {perfil?.venc_ficha_medica && (
             <div className="col-auto">
               <span className="badge bg-secondary p-2 fs-6">
-                📋 Ficha vence: {new Date(perfil.venc_ficha_medica).toLocaleDateString('es-AR')}
+                📋 Ficha vence: {(() => {
+                  const f = new Date(perfil.venc_ficha_medica)
+                  return `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`
+                })()}
               </span>
             </div>
           )}

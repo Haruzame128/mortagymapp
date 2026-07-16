@@ -47,7 +47,7 @@ export default function TablaPerfil({
                 <tr key={fila.id}>
                   {columnas.map((col) => (
                     <td key={col.key}>
-                      {renderValor(fila[col.key])}
+                      {col.render ? col.render(fila) : renderValor(fila[col.key])}
                     </td>
                   ))}
                 </tr>
@@ -70,9 +70,8 @@ export default function TablaPerfil({
             {Array.from({ length: totalPaginas }).map((_, i) => (
               <li
                 key={i}
-                className={`nav-item ${
-                  paginaActual === i + 1 ? "navlink-active" : ""
-                }`}
+                className={`nav-item ${paginaActual === i + 1 ? "navlink-active" : ""
+                  }`}
               >
                 <button
                   className="nav-link"

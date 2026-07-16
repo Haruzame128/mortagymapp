@@ -43,7 +43,15 @@ export default function Navbar({ tipoBanner = "normal" }) {
               <li className="nav-item"><NavLink className="nav-link" to="/actividades" onClick={cerrarMenu}>Disciplinas</NavLink></li>
               <li className="nav-item"><NavLink className="nav-link" to="/horarios" onClick={cerrarMenu}>Horarios</NavLink></li>
 
-              {user?.rol === 'Administrador' ? (
+              {!user ? (
+                // No logueado → Ingresar
+                <li className="nav-item">
+                  <NavLink className="nav-link nav-btn px-4" to="/login" onClick={cerrarMenu}>
+                    <BsBoxArrowInRight className="me-2" /> Ingresar
+                  </NavLink>
+                </li>
+              ) : user.rol === 'Administrador' ? (
+                // Admin → Panel de Control + Salir
                 <>
                   <li className="nav-item">
                     <NavLink className="nav-link nav-btn px-4" to="/admin" onClick={cerrarMenu}>
@@ -51,16 +59,31 @@ export default function Navbar({ tipoBanner = "normal" }) {
                     </NavLink>
                   </li>
                   <li className="nav-item ms-2">
-                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout} title="Cerrar sesión">
+                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
+                      <BsBoxArrowRight className="me-2" /> Salir
+                    </button>
+                  </li>
+                </>
+              ) : user.rol === 'Cliente' ? (
+                // Cliente → Mi Perfil + Salir
+                <>
+                  <li className="nav-item">
+                    <NavLink className="nav-link nav-btn px-4" to="/perfil" onClick={cerrarMenu}>
+                      <BsSpeedometer2 className="me-2" /> Mi Perfil
+                    </NavLink>
+                  </li>
+                  <li className="nav-item ms-2">
+                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
                       <BsBoxArrowRight className="me-2" /> Salir
                     </button>
                   </li>
                 </>
               ) : (
-                <li className="nav-item">
-                  <NavLink className="nav-link nav-btn px-4" to="/login" onClick={cerrarMenu}>
-                    <BsBoxArrowInRight className="me-2" /> Ingresar
-                  </NavLink>
+                // Profesor / Recepción → Salir
+                <li className="nav-item ms-2">
+                  <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
+                    <BsBoxArrowRight className="me-2" /> Salir
+                  </button>
                 </li>
               )}
             </ul>
