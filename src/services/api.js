@@ -170,6 +170,7 @@ export const horariosPublicoApi = {
 // ── Perfil ───────────────────────────────────────────────────────
 export const perfilApi = {
   getMe:           ()        => get('/api/perfil/me'),
+  update:          (data)    => patch('/api/perfil/me', data),
   getHorariosMus:  ()        => get('/api/perfil/horarios-musculacion'),
   getRutina:       (mes)     => get(`/api/perfil/rutina?mes=${mes}`),
   guardarProgreso: (data)    => post('/api/perfil/progreso', data),
