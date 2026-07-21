@@ -228,13 +228,13 @@ export default function VerRutina() {
 
             {/* Filtros */}
             <div className="row mb-3 align-items-center filtros-rutina">
-                <div className="col-md-4">
+                <div className="col-md-3">
                     <select className="form-select" value={semanaActual}
                         onChange={e => { setSemanaActual(Number(e.target.value)); setFiltroDia('mensual') }}>
                         {[1, 2, 3, 4].map(s => <option key={s} value={s}>Semana {s}</option>)}
                     </select>
                 </div>
-                <div className="col-md-4">
+                <div className="col-md-3">
                     <select className="form-select" value={filtroDia}
                         onChange={e => setFiltroDia(e.target.value)}>
                         <option value="mensual">Rutina Mensual</option>
