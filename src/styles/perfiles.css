@@ -286,17 +286,50 @@
   background-color: #fff;
 }
 
+ .perfil-estado-user{
+  display: flex;
+    gap: 15px;
+    flex-direction: row;
+  
+  }
+
+  @media (max-width: 768px) {
+  .estado-user {
+    gap: 5px;
+  }
+
+  .actividades-user {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .actividades-user .card {
+    width: 100%;
+  }
+
+  .perfil-estado-user{
+    flex-direction: column;
+    
+  }
+} 
+
+
 @media (max-width: 460px) {
 
   .estado-user {
     flex-direction: column;
-    align-items: center;
+    align-items: start;
   }
 
   .estado-user span {
     text-align: center;
     background: #f8f9fa;
     padding: 4px !important;
+  }
+
+  .perfil-estado-user{
+    flex-direction: column;
+  
   }
 
    .actividades-user {
@@ -315,10 +348,6 @@
     align-items: center;
   }
 
-  .acciones-rutina .btn {
-    width: 90%;
-    max-width: 320px;
-  }
 
   .filtros-rutina {
     text-align: center;
@@ -345,5 +374,30 @@
 
   .mobile-label {
     display: inline;
+  }
+
+   .estado-text {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .estado-text small {
+    font-size: 14px;
+  }
+
+  .btn-user-video {
+    width: 90%;
+    background-color: #0081cb; /* Tu azul */
+    color: white;
+    border-radius: 8px;
+  }
+
+  .btn-user {
+    width: 40%;
+    background-color: #f8f9fa;
+    border: 1px solid #0081cb;
+    color: #333;
+    font-size: 0.9rem;
   }
 }

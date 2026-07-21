@@ -23,6 +23,9 @@ export default function VerRutina() {
     const [guardando, setGuardando] = useState(false)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
+    const [showVideo, setShowVideo] = useState(false);
+    const videoUrl = "https://www.youtube.com/embed/a_1gQmdwfUQ?si=zLVVO6sYe4yEKAKk";
+
     // ── Cargar rutina desde API ─────────────────────────────────────
     useEffect(() => {
         setLoading(true)
@@ -181,12 +184,14 @@ export default function VerRutina() {
         </div>
     )
 
+  
+
     return (
         <div>
             {/* Acciones */}
-            <div className="acciones-rutina d-flex gap-2 mb-4">
+            <div className="acciones-rutina d-flex flex-wrap gap-2 mb-4 justify-content-center justify-content-md-end">
                 <button className="btn btn-principal w-auto" onClick={generarPDF}>
-                    <i className="ri-file-text-line me-1" />Descargar Rutina
+                    <i className="ri-file-text-line me-1" />Descargar
                 </button>
 
                 {modoEdicion ? (
@@ -201,18 +206,48 @@ export default function VerRutina() {
                     </div>
                 ) : (
                     <button className="btn btn-principal w-auto" onClick={() => setModoEdicion(true)}>
-                        <i className="ri-pencil-line me-1" />Agregar Progreso
+                        <i className="ri-pencil-line me-1" />Editar Progreso
                     </button>
                 )}
+                  <button className="btn btn-principal w-auto btn-user-video" 
+                    onClick={() => setShowVideo(true)}>
+                   <i class="ri-open-arm-fill me-1"/>Calentamiento
+                </button>
             </div>
+
+            <Modal
+                isOpen={showVideo} 
+                onRequestClose={() => setShowVideo(false)}
+                contentLabel="Video Calentamiento"
+                className="modal-react"
+                overlayClassName="modal-overlay"
+            >
+                <div className="modal-header">
+                    <h5 className="modal-title">Calentamiento</h5>
+                    <button type="button" className="close" onClick={() => setShowVideo(false)}>
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div className="modal-body my-2">
+                    <p>Recuerda hacer tus ejercicios de calentamiento</p>
+                    <div className="ratio ratio-16x9">
+                        <iframe
+                            src={showVideo ? videoUrl : ""}
+                            title="Video Ejercicios de Calentamiento"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-secondary" onClick={() => setShowVideo(false)}>
+                        Cerrar
+                    </button>
+                </div>
+            </Modal>
 
             {/* Filtros */}
             <div className="row mb-3 align-items-center filtros-rutina">
-                <div className="col-md-3">
-                    <select className="form-select" value={mes} onChange={e => setMes(e.target.value)}>
-                        {MESES.map(m => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                </div>
                 <div className="col-md-3">
                     <select className="form-select" value={filtroDia}
                         onChange={e => setFiltroDia(e.target.value)}>
@@ -230,11 +265,11 @@ export default function VerRutina() {
                         <option value={3}>Semana 3 y 4</option>
                     </select>
                 </div>
-                <p className="col-md-3 mb-0">Acordate de hacer tu ejercicio de Calentamiento</p>
+                
             </div>
 
-            {/* Tabla */}
-            <div className="tabla-container">
+            {/* Tabla Completa*/}
+            <div className="tabla-container d-none d-md-block">
                 <table className="table table-bordered text-center align-middle tabla-rutinas">
                     <thead className="table-head">
                         <tr>
@@ -321,6 +356,145 @@ export default function VerRutina() {
                     </tbody>
                 </table>
             </div>
+
+            {/** Tabla Movil */}
+            <div className="d-block d-md-none">
+               
+                <table className="table table-bordered text-center align-middle tabla-rutinas"  rutinaData={rutinaFiltrada} >
+                <thead className="table-head">
+                    <tr className="">
+                        <th colSpan={5} className="grupo-rutina">
+                            <p className="titulo-grupo-rutina">Rutina</p>
+                        </th>
+                    </tr>
+                    <tr className="sub-head">
+                        <th>Día</th>
+                        <th className="">Ejercicio</th>
+                        <th className="-">Serie</th>
+                        <th className="-">
+                            <span className="desktop-label">Repeticiones</span>
+                            <span className="mobile-label">Reps</span>
+                        </th>
+                        <th className="">Carga</th> 
+                    
+                    </tr>
+                </thead>
+                <tbody>
+                    {rutinaFiltrada.map((r, index) => {
+                        const filasPorDia = rutinaFiltrada.filter(item => item.dia === r.dia).length;
+                        const esPrimerEjercicioDelDia = index === 0 || rutinaFiltrada[index - 1].dia !== r.dia;
+                        return (
+                            <tr key={index}>
+                            {esPrimerEjercicioDelDia && (
+                                <td
+                                    rowSpan={filasPorDia}
+                                    className="grupo-dia"
+                                >
+                                Día {r.dia}
+                                </td>
+                            )}
+                            <td className="text-start">{r.ejercicio}</td>
+                            <td className="">{r.series}</td>
+                            <td className="">{r.reps}</td>
+                            <td className="">{r.carga}</td>
+                           
+                            </tr>
+                        );
+                    })}
+                </tbody>
+                </table>
+
+                <table className="table table-bordered text-center align-middle tabla-rutinas"  rutinaData={rutinaFiltrada} >
+                <thead className="table-head">
+                    <tr className="">
+                        {semanasVisibles.map((semana) => (
+                            <th key={semana} colSpan={5} className="grupo-progreso">
+                                <p className="titulo-grupo-progreso">Progreso - Semana {semana}</p>
+                            </th>
+                        ))}
+                    </tr>
+                    <tr className="sub-head">
+                        <th>Día</th>
+                        <th className="">Ejercicio</th>
+                        <th className="-">Serie</th>
+                        <th className="-">
+                            <span className="desktop-label">Repeticiones</span>
+                            <span className="mobile-label">Reps</span>
+                        </th>
+                        <th className="">Carga</th> 
+                        {semanasVisibles.map((semana) => (
+                        <React.Fragment key={semana}>
+                            <th>Serie</th>
+                            <th>
+                                <span className="desktop-label">Repeticiones</span>
+                                <span className="mobile-label">Reps</span>
+                            </th>
+                            <th>Carga</th>
+                        </React.Fragment>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {rutinaFiltrada.map((r, index) => {
+                        const filasPorDia = rutinaFiltrada.filter(item => item.dia === r.dia).length;
+                        const esPrimerEjercicioDelDia = index === 0 || rutinaFiltrada[index - 1].dia !== r.dia;
+                        return (
+                            <tr key={index}>
+                            {esPrimerEjercicioDelDia && (
+                                <td
+                                    rowSpan={filasPorDia}
+                                    className="grupo-dia"
+                                >
+                                Día {r.dia}
+                                </td>
+                            )}
+                            <td className="text-start">{r.ejercicio}</td>
+                            <td className="">{r.series}</td>
+                            <td className="">{r.reps}</td>
+                            <td className="">{r.carga}</td>
+                            {semanasVisibles.map((semana) => (
+                                <React.Fragment key={semana}>
+                                <td>
+                                    
+                                    <input 
+                                        type="number" 
+                                        value={r.progreso?.[semana]?.serie || ""}
+                                        onChange={(e) => handleProgresoChange(r.id, semana, "serie", e.target.value)}
+                                        className="input-progreso form-control form-control-sm"
+                                    />
+                                    
+                                </td>
+                            <td>
+                              
+                                    <input 
+                                        type="number" 
+                                        className="input-progreso"
+                                        value={r.progreso?.[semana]?.reps || ""} 
+                                        onChange={(e) =>  handleProgresoChange(r.id, semana, "reps", e.target.value)} 
+                                    />
+                                
+                            </td>
+                            <td>
+                                
+                                    <input 
+                                        type="text" 
+                                        className="input-progreso"
+                                        placeholder="0kg"
+                                        value={r.progreso?.[semana]?.carga || ""} 
+                                        onChange={(e) => handleProgresoChange(r.id, semana, "carga", e.target.value)} 
+                                    />
+                            
+                            </td>
+                                </React.Fragment>
+                            ))}
+                            </tr>
+                        );
+                    })}
+                </tbody>
+                </table>   
+            </div>
+
+
         </div>
     )
 }

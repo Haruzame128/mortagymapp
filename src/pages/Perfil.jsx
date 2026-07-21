@@ -1,13 +1,42 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+//import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { perfilApi } from "../services/api";
+import EstadoItem from "../components/usuario/EstadoItem";
 
-export default function Perfil() {
-  const navigate = useNavigate();
+export default function Perfil({ onSubmit }) {
+  //const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [perfil, setPerfil] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [formData, setFormData] = useState({
+      apellidoNombre: "",
+      dni: "",
+      direccion: "",
+      telefono1: "",
+      telefonoEmergencia: "",
+      fechaNacimiento: "",
+      edad: "",
+      planElegido: "",
+      valorMensual: "",
+      dias: "",
+      horarios: "",
+    });
+
+  const [isEditable, setIsEditable] = useState(false);
+
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData({ ...formData, [name]: value });
+    };
+
+   const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Ficha de inscripción:", formData);
+
+    if (onSubmit) onSubmit(formData);
+  };
 
   useEffect(() => {
     perfilApi.getMe()
@@ -24,6 +53,7 @@ export default function Perfil() {
     )
   }
 
+   
   return (
     <div className="container perfil mt-4">
 
@@ -31,114 +61,161 @@ export default function Perfil() {
       <div className="text-center mb-4">
         <h2 className="fw-bold">Hola, {perfil?.nomap_c || user?.nombre}</h2>
 
-        <div className="row justify-content-center g-2 mt-2">
-          <div className="col-auto">
-            <span className={`badge p-2 fs-6 ${perfil?.cuota_al_dia ? 'bg-success' : 'bg-danger'}`}>
-              {perfil?.cuota_al_dia ? '✅ Cuota al día' : '❌ Cuota vencida'}
-            </span>
-          </div>
-          <div className="col-auto">
-            <span className={`badge p-2 fs-6 ${perfil?.tiene_ficha ? 'bg-success' : 'bg-warning text-dark'}`}>
-              {perfil?.tiene_ficha ? '✅ Ficha médica' : '⚠️ Falta ficha médica'}
-            </span>
-          </div>
-          {perfil?.venc_ficha_medica && (
-            <div className="col-auto">
-              <span className="badge bg-secondary p-2 fs-6">
-                📋 Ficha vence: {(() => {
-                  const f = new Date(perfil.venc_ficha_medica)
-                  return `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`
-                })()}
-              </span>
-            </div>
-          )}
+        {/* Cerrar sesión */}
+        <div className="text-center mt-5">
+          <button className="btn btn-outline-secondary" onClick={logout}>
+            <i className="ri-logout-box-line me-2"></i> Cerrar sesión
+          </button>
         </div>
 
-        {perfil?.entradas_restantes != null && (
-          <p className="fs-5 mt-3">
-            <strong>Entradas restantes:</strong>{' '}
-            <span className="text-primary fw-bold">{perfil.entradas_restantes}</span>
-          </p>
-        )}
       </div>
+   
+        <form className="card p-4 shadow-sm" disabled onSubmit={handleSubmit}>
+          <h4 className="fw-bold mb-4 text-center">Perfil del Cliente</h4>
 
-      {/* Cards */}
-      <div className="row g-4 justify-content-center">
+          {/* DATOS PERSONALES */}
+          <h6 className="fw-bold mb-3">Datos personales</h6>
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">Apellido y Nombre</label>
+              <input
+                type="text"
+                className="form-control"
+                name="apellidoNombre"
+                value={formData.apellidoNombre}
+                onChange={handleChange}
+                disabled={!isEditable}
+                required
+              />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label">DNI</label>
+              <input
+                type="number"
+                className="form-control"
+                name="dni"
+                value={formData.dni}
+                onChange={handleChange}
+                disabled={!isEditable}
+                required
+              />
+            </div>
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Dirección</label>
+            <input
+              type="text"
+              className="form-control"
+              name="direccion"
+              value={formData.direccion}
+              onChange={handleChange}
+              disabled={!isEditable}
+            />
+          </div>
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <label className="form-label">Teléfono</label>
+              <input
+                type="tel"
+                className="form-control"
+                name="telefono1"
+                value={formData.telefono1}
+                onChange={handleChange}
+                disabled={!isEditable}
+              />
+            </div>
 
-        {/* Mis actividades */}
-        <div className="col-12 col-md-4">
-          <div className="card shadow-sm border-1 text-center h-100">
-            <div className="card-body d-flex flex-column justify-content-between">
-              <div>
-                <h4 className="card-title fw-bold mb-3">Mis actividades</h4>
-                <p className="card-text text-muted mb-4">
-                  Ver las actividades en las que estás inscripto.
-                </p>
-                {perfil?.inscripciones?.length > 0 && (
-                  <div className="text-start mb-3">
-                    {[...new Map(perfil.inscripciones.map(i => [i.nombre_d, i])).values()].map((i, idx) => (
-                      <span key={idx} className="badge bg-light text-dark border me-1 mb-1">
-                        {i.nombre_d}
+            <div className="col-md-6">
+              <label className="form-label">Teléfono de emergencia</label>
+              <input
+                type="tel"
+                className="form-control"
+                name="telefonoEmergencia"
+                value={formData.telefonoEmergencia}
+                onChange={handleChange}
+                disabled={!isEditable}
+              />
+            </div>
+          </div>
+          <div className="row mb-4">
+            <div className="col-md-6">
+              <label className="form-label">Fecha de nacimiento</label>
+              <input
+                type="date"
+                className="form-control"
+                name="fechaNacimiento"
+                value={formData.fechaNacimiento}
+                onChange={handleChange}
+                disabled={!isEditable}
+              />
+            </div>
+
+            <div className="col-md-6">
+              <label className="form-label">Edad</label>
+              <input disabled
+                type="number"
+                className="form-control"
+                name="edad"
+                value={formData.edad}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <h6 className="fw-bold mb-3">Actividades</h6>
+
+          {perfil?.inscripciones?.length > 0 && (
+            <div className="text-start mb-3">
+              {[...new Map(perfil.inscripciones.map(i => [i.nombre_d, i])).values()].map((i, idx) => (
+                <span key={idx} className="badge bg-light text-dark border me-1 mb-1">
+                  {i.nombre_d}
+                </span>
+              ))}
+            </div>
+            )}
+          <div className="row">
+              <div className="col perfil-estado-user">
+                  <EstadoItem 
+                      icon= {perfil?.cuota_al_dia ? '✅' : '❌'}
+                      titulo=  {perfil?.cuota_al_dia ? 'Cuota al día' : 'Cuota vencida'}
+                      vencimiento="28/2" 
+                  />
+                  <EstadoItem 
+                      icon="✅" 
+                      titulo="Matrícula al día (En caso de natación)" 
+                      vencimiento="20/12" 
+                      
+                  />
+                  <EstadoItem 
+                      icon={perfil?.tiene_ficha ? '✅' : '⚠️ '} 
+                      titulo={perfil?.tiene_ficha ? 'Ficha médica Vigente' : 'Falta ficha médica'} 
+                      vencimiento={null} 
+                  />
+
+                  {perfil?.venc_ficha_medica && (
+                    <div className="col-auto">
+                      <span className="badge bg-secondary p-2 fs-6">
+                        📋 Ficha vence: {(() => {
+                          const f = new Date(perfil.venc_ficha_medica)
+                          return `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`
+                        })()}
                       </span>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
               </div>
-              <button
-                className="btn btn-principal w-75 mx-auto"
-                onClick={() => navigate('/perfil/actividad-horario')}>
-                Ver actividades
-              </button>
-            </div>
           </div>
-        </div>
-
-        {/* Mis rutinas */}
-        <div className="col-12 col-md-4">
-          <div className="card shadow-sm border-1 text-center h-100">
-            <div className="card-body d-flex flex-column justify-content-between">
-              <div>
-                <h4 className="card-title fw-bold mb-3">Mis rutinas</h4>
-                <p className="card-text text-muted mb-4">
-                  Descargá tu plan de entrenamiento personalizado.
-                </p>
-              </div>
-              <button
-                className="btn btn-principal w-75 mx-auto"
-                onClick={() => navigate('/perfil/ver-rutina')}>
-                Ver rutina
-              </button>
-            </div>
+          <div className="d-flex justify-content-end gap-2 mt-4">
+            <button type="reset" className="btn btn-outline-secondary">
+              Limpiar
+            </button>
+            <button type="reset" className="btn btn-outline-primary" onClick={() => setIsEditable(true)}>
+              Editar
+            </button>
+            <button type="submit" className="btn btn-success">
+              Guardar cambios
+            </button>
           </div>
-        </div>
-
-        {/* Mis horarios */}
-        <div className="col-12 col-md-4">
-          <div className="card shadow-sm border-1 text-center h-100">
-            <div className="card-body d-flex flex-column justify-content-between">
-              <div>
-                <h4 className="card-title fw-bold mb-3">Mis horarios</h4>
-                <p className="card-text text-muted mb-4">
-                  Consultá tus horarios de entrenamiento.
-                </p>
-              </div>
-              <button
-                className="btn btn-principal w-75 mx-auto mb-2"
-                onClick={() => navigate('/perfil/horario-usuario')}>
-                Ver horarios
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Cerrar sesión */}
-      <div className="text-center mt-5">
-        <button className="btn btn-outline-secondary" onClick={logout}>
-          <i className="ri-logout-box-line me-2"></i> Cerrar sesión
-        </button>
-      </div>
+        </form>
 
     </div>
   )
