@@ -210,6 +210,13 @@ export default function Disciplinas() {
       precio_5: d.precio_5 || 0,
       precio_6: d.precio_6 || 0,
       precio_dia: d.precio_dia || 0,
+      precio_1_debito: d.precio_1_debito || 0,
+      precio_2_debito: d.precio_2_debito || 0,
+      precio_3_debito: d.precio_3_debito || 0,
+      precio_4_debito: d.precio_4_debito || 0,
+      precio_5_debito: d.precio_5_debito || 0,
+      precio_6_debito: d.precio_6_debito || 0,
+      precio_dia_debito: d.precio_dia_debito || 0,
     });
     setEditandoPrecios(false);
     setModalPrecios(true);
@@ -798,7 +805,7 @@ export default function Disciplinas() {
       </Modal>
 
       {/* MODAL PRECIOS */}
-      <Modal isOpen={modalPrecios} onRequestClose={() => setModalPrecios(false)} className="modal-react" overlayClassName="modal-overlay">
+      {/* <Modal isOpen={modalPrecios} onRequestClose={() => setModalPrecios(false)} className="modal-react" overlayClassName="modal-overlay">
         <div className="modal-header">
           <h5 className="modal-title">Precios – {disciplinaSeleccionada?.nombre_d}</h5>
           <button className="close" onClick={() => setModalPrecios(false)}><span>&times;</span></button>
@@ -829,7 +836,65 @@ export default function Disciplinas() {
             {editandoPrecios ? "Guardar cambios" : "Editar"}
           </button>
         </div>
-      </Modal>
+      </Modal> */}
+
+      {/* MODAL PRECIOS (NUEVO FORMATO) */}
+      <Modal isOpen={modalPrecios} onRequestClose={() => setModalPrecios(false)} className="modal-react" overlayClassName="modal-overlay">
+        <div className="modal-header">
+          <h5 className="modal-title">Precios – {disciplinaSeleccionada?.nombre_d}</h5>
+          <button className="close" onClick={() => setModalPrecios(false)}><span>&times;</span></button>
+        </div>
+        <div className="modal-body mt-2">
+          {/* Encabezados */}
+          <div className="row mb-2 fw-semibold text-center">
+            <div className="col-md-4"></div>
+            <div className="col-md-4">Efectivo</div>
+            <div className="col-md-4">Débito / Tarjeta</div>
+          </div>
+
+          {precios && [1, 2, 3, 4, 5, 6].map(n => (
+            <div className="row mb-2 align-items-center" key={n}>
+              <div className="col-md-4"><label>{n} día(s)/sem</label></div>
+              <div className="col-md-4">
+                <input type="number" className="form-control form-control-sm"
+                  value={precios[`precio_${n}`] || ''}
+                  disabled={!editandoPrecios}
+                  onChange={e => setPrecios({ ...precios, [`precio_${n}`]: e.target.value })} />
+              </div>
+              <div className="col-md-4">
+                <input type="number" className="form-control form-control-sm"
+                  value={precios[`precio_${n}_debito`] || ''}
+                  disabled={!editandoPrecios}
+                  onChange={e => setPrecios({ ...precios, [`precio_${n}_debito`]: e.target.value })} />
+              </div>
+            </div>
+          ))}
+
+          <div className="row mb-2 align-items-center">
+            <div className="col-md-4"><label>Precio por día</label></div>
+            <div className="col-md-4">
+              <input type="number" className="form-control form-control-sm"
+                value={precios?.precio_dia || ''}
+                disabled={!editandoPrecios}
+                onChange={e => setPrecios({ ...precios, precio_dia: e.target.value })} />
+            </div>
+            <div className="col-md-4">
+              <input type="number" className="form-control form-control-sm"
+                value={precios?.precio_dia_debito || ''}
+                disabled={!editandoPrecios}
+                onChange={e => setPrecios({ ...precios, precio_dia_debito: e.target.value })} />
+            </div>
+            <div className="col-md-4"></div>
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-secondary me-2" onClick={() => setModalPrecios(false)}>Cerrar</button>
+          <button className="btn btn-admin"
+            onClick={() => editandoPrecios ? handleGuardarPrecios() : setEditandoPrecios(true)}>
+            {editandoPrecios ? "Guardar cambios" : "Editar"}
+          </button>
+        </div>
+      </Modal> {/* FIN MODAL PRECIOS (NUEVO FORMATO) */}
 
       {/* MODAL HORARIOS */}
       <Modal isOpen={modalHorarios} onRequestClose={() => setModalHorarios(false)} className="modal-react" overlayClassName="modal-overlay">
