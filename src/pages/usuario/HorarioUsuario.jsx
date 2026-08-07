@@ -58,38 +58,40 @@ export default function HorarioUsuario() {
         </button>
       </div>
 
-      <table className="table table-bordered text-center align-middle">
-        <thead className="table-head">
-          <tr>
-            <th>Hora</th>
-            {dias.map(dia => <th key={dia}>{dia}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {todasLasHoras.map(hora => (
-            <tr key={hora}>
-              <td className="fw-bold">{hora}</td>
-              {dias.map(dia => {
-                const clases = getClases(dia, hora)
-                return (
-                  <td key={`${dia}-${hora}`}>
-                    {clases.length > 0 ? (
-                      clases.map((c, idx) => (
-                        <div key={idx} className="mb-1">
-                          <p className="nombre-actividad" translate="no">{c.nombre_a}</p>
-                          {c.profesor && (
-                            <p className="profesor text-muted small">{c.profesor}</p>
-                          )}
-                        </div>
-                      ))
-                    ) : '-'}
-                  </td>
-                )
-              })}
+      <div className="tabla-container">
+        <table className="table table-bordered text-center align-middle tabla-horario-usuario">
+          <thead className="table-head">
+            <tr>
+              <th>Hora</th>
+              {dias.map(dia => <th key={dia}>{dia}</th>)}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {todasLasHoras.map(hora => (
+              <tr key={hora}>
+                <td className="fw-bold">{hora}</td>
+                {dias.map(dia => {
+                  const clases = getClases(dia, hora)
+                  return (
+                    <td key={`${dia}-${hora}`}>
+                      {clases.length > 0 ? (
+                        clases.map((c, idx) => (
+                          <div key={idx} className="mb-1">
+                            <p className="nombre-actividad" translate="no">{c.nombre_a}</p>
+                            {c.profesor && (
+                              <p className="profesor text-muted small">{c.profesor}</p>
+                            )}
+                          </div>
+                        ))
+                      ) : '-'}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   )
 }

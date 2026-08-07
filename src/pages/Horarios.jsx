@@ -98,7 +98,7 @@ export default function Horarios() {
             <h2 className="titulo-pagina mb-3 mb-md-0">Horarios</h2>
             <div className="filtro-pdf text-center text-md-start mt-4">
               <select
-                className="form-select d-inline-block w-auto"
+                className="form-select text-center d-inline-block w-auto px-5"
                 value={filtro}
                 onChange={(e) => setFiltro(e.target.value)}
               >

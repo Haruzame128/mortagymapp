@@ -31,7 +31,6 @@ export default function Disciplina({
 
   const precioSeleccionado = precios[dias];
   const tieneUnaSolaOpcion = opcionesDias.length === 1;
-  const tieneUnaFoto = fotos.length === 1;
 
   return (
     <>
@@ -41,9 +40,9 @@ export default function Disciplina({
           {/* Info */}
           <div className={`col-lg-6 ${reverse ? "order-lg-2" : "order-lg-1"}`}>
             <div className="info mw-lg mx-auto mx-lg-0">
-              <h3 className="titulo-actividad mb-8" translate="no">{titulo}</h3>
+              <h2 className="titulo-actividad mb-8" translate="no">{titulo}</h2>
               <div className="descripcion-actividad d-sm-flex mb-14">
-                <p>{descripcion}</p>
+                <p className='texto-descripcion'>{descripcion}</p>
               </div>
               <div className="sub-actividad">
                 <p>{subactividad}</p>
@@ -163,32 +162,29 @@ export default function Disciplina({
           </div>
 
           {/* Carrusel */}
-          <div className={`carrusel-actividad col-lg-6 ${reverse ? "order-lg-1" : "order-lg-2"}`}>
-            {tieneUnaFoto ? (
-              <div className="d-flex justify-content-center w-100" style={{ alignSelf: 'center', minHeight: '400px', alignItems: 'center' }}>
-                <div className="foto grande foto-unica">
-                  <img src={central.src} alt="central" />
+          <div className={`carrusel-actividad col-lg-6 ${reverse ? "order-lg-1" : "order-lg-2"} 
+          ${fotos.length === 1 ? 'una-foto' : 'dos-fotos'}`}>
+            {fotos.length === 1 ? (
+              <div className="foto-item unica">
+                  <img src={fotos[0].src} alt="foto-actividad" />
                   <div className="overlay"></div>
-                </div>
               </div>
             ) : (
-              // Varias fotos — layout normal con laterales
               <>
-                <div className="foto grande">
+                <div className="foto-item grande">
                   <img src={central.src} alt="central" />
                   <div className="overlay"></div>
                 </div>
-                <div className={`laterales ${fotos.filter(f => f.id !== central.id).length === 1 ? 'laterales-centrado' : ''}`}>
-                  {fotos
-                    .filter((f) => f.id !== central.id)
-                    .map((f) => (
-                      <div key={f.id} className="foto chica" onClick={() => setCentral(f)}>
-                        <img src={f.src} alt={`foto-${f.id}`} />
-                        <div className="overlay"></div>
-                      </div>
-                    ))}
-                </div>
-              </>
+              <div className='laterales laterales-centrado'>
+                {fotos.filter((f) => f.id !== central.id)
+                  .map((f) => (
+                    <div key={f.id} className="foto-item chica" onClick={() => setCentral(f)}>
+                      <img src={f.src} alt={`foto-${f.id}`} />
+                      <div className="overlay"></div>
+                    </div>
+                  ))}
+              </div>
+              </>          
             )}
           </div>
 

@@ -814,7 +814,12 @@ export default function Disciplinas() {
           {precios && [1, 2, 3, 4, 5, 6].map((n) => (
             <div className="row mb-2" key={n}>
               <div className="col-md-6"><label>{n} día(s) por semana</label></div>
-              <div className="col-md-6">
+              <div className="col-md-3">
+                <input type="number" className="form-control" value={precios[`precio_${n}`]}
+                  disabled={!editandoPrecios}
+                  onChange={(e) => setPrecios({ ...precios, [`precio_${n}`]: e.target.value })} />
+              </div>
+              <div className="col-md-3">
                 <input type="number" className="form-control" value={precios[`precio_${n}`]}
                   disabled={!editandoPrecios}
                   onChange={(e) => setPrecios({ ...precios, [`precio_${n}`]: e.target.value })} />
@@ -823,7 +828,12 @@ export default function Disciplinas() {
           ))}
           <div className="row mb-2">
             <div className="col-md-6"><label>Precio por día</label></div>
-            <div className="col-md-6">
+            <div className="col-md-3">
+              <input type="number" className="form-control" value={precios?.precio_dia || ""}
+                disabled={!editandoPrecios}
+                onChange={(e) => setPrecios({ ...precios, precio_dia: e.target.value })} />
+            </div>
+            <div className="col-md-3">
               <input type="number" className="form-control" value={precios?.precio_dia || ""}
                 disabled={!editandoPrecios}
                 onChange={(e) => setPrecios({ ...precios, precio_dia: e.target.value })} />

@@ -182,14 +182,14 @@
 }
 
 .tabla-rutinas{
-  width: auto;
-  
-  border-collapse: collapse;
-  display: block;
-  overflow-x: auto;
-  white-space: nowrap;
+  width: 800px;
+  margin: 0 auto;
 }
 
+.tabla-horario-usuario{
+  width: 900px;
+  margin: 0 auto;
+}
 
 .input-progreso {
   width: 55px;
