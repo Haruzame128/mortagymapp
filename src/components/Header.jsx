@@ -78,8 +78,27 @@ export default function Navbar({ tipoBanner = "normal" }) {
                     </button>
                   </li>
                 </>
+              ) : user.rol === 'Profesor' ? (
+                // Profesor → Mis Alumnos + Mi Perfil + Salir
+                <>
+                 {/*  <li className="nav-item">
+                    <NavLink className="nav-link nav-btn px-4" to="/profesor/alumnos-profesor" onClick={cerrarMenu}>
+                      <i className="ri-group-line me-2"></i> Mis Alumnos
+                    </NavLink>
+                  </li> */}
+                  <li className="nav-item ms-2">
+                    <NavLink className="nav-link nav-btn px-4" to="/profesor/perfil" onClick={cerrarMenu}>
+                      <BsSpeedometer2 className="me-2" /> Mi Perfil
+                    </NavLink>
+                  </li>
+                  <li className="nav-item ms-2">
+                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
+                      <BsBoxArrowRight className="me-2" /> Salir
+                    </button>
+                  </li>
+                </>
               ) : (
-                // Profesor / Recepción → Salir
+                // Recepción → Salir
                 <li className="nav-item ms-2">
                   <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
                     <BsBoxArrowRight className="me-2" /> Salir

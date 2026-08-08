@@ -183,4 +183,6 @@ export const profesorApi = {
   getRutina:     (id, mes, semana) => get(`/api/profesor/alumnos/${id}/rutina?mes=${mes}&semana=${semana}`),
   guardarRutina: (data)            => post('/api/profesor/rutinas', data),
   getProgreso:   (id, mes)         => get(`/api/profesor/alumnos/${id}/progreso?mes=${mes}`),
+  getPerfil:     ()     => get('/api/profesor/perfil'),
+  updatePerfil:  (data) => patch('/api/profesor/perfil', data),
 }

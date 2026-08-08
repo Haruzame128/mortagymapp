@@ -127,7 +127,7 @@
   flex: 1;
   justify-content: center;
 }
-.carrusel-actividad.dos-fotos .foto.chica{
+.carrusel-actividad.dos-fotos .foto-item.chica{
   width: 100%;
   aspect-ratio: 3 / 4;
   cursor: pointer;

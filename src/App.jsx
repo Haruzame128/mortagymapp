@@ -26,6 +26,7 @@ import Perfil from './pages/Perfil'
 import ProfesorLayout from './layouts/ProfesorLayout'
 import FormRutina from './pages/profesor/FormRutina'
 import AlumnosPorProfesor from './pages/profesor/AlumnosPorProfesor'
+import PerfilProfesor from './pages/profesor/PerfilProfesor'
 
 /* Admin */
 import AdminLayout from './layouts/AdminLayout'
@@ -49,10 +50,10 @@ import './App.css'
 
 function AppContent() {
   const location = useLocation()
-  const esAdmin     = location.pathname.startsWith('/admin')
+  const esAdmin = location.pathname.startsWith('/admin')
   const esRecepcion = location.pathname.startsWith('/recepcion')
-  const esPerfil    = location.pathname.startsWith('/perfil')
-  const esProfesor  = location.pathname.startsWith('/profesor')
+  const esPerfil = location.pathname.startsWith('/perfil')
+  const esProfesor = location.pathname.startsWith('/profesor')
 
   let tipoBanner = 'normal'
   if (esAdmin) tipoBanner = 'none'
@@ -64,20 +65,20 @@ function AppContent() {
       <main className={esAdmin ? 'admin-wrapper' : 'container mx-auto p-4'}>
         <Routes>
           {/* ── Rutas públicas ── */}
-          <Route path="/"            element={<Home />} />
+          <Route path="/" element={<Home />} />
           <Route path="/actividades" element={<Actividades />} />
-          <Route path="/horarios"    element={<Horarios />} />
-          <Route path="/contacto"    element={<Contacto />} />
-          <Route path="/login"       element={<Login />} />
+          <Route path="/horarios" element={<Horarios />} />
+          <Route path="/contacto" element={<Contacto />} />
+          <Route path="/login" element={<Login />} />
 
           {/* ── Perfil (Cliente) ── */}
           <Route element={<ProtectedRoute roles={['Cliente']} />}>
             <Route path="/perfil" element={<UsuarioLayout />}>
               <Route index element={<Perfil />} />
               <Route path="actividad-horario" element={<ActividadUsuario />} />
-              <Route path="ver-rutina"        element={<VerRutina />} />
-              <Route path="horario-usuario"   element={<HorarioUsuario />} />
-              <Route path="reagendar-turno"   element={<Reagendar />} />
+              <Route path="ver-rutina" element={<VerRutina />} />
+              <Route path="horario-usuario" element={<HorarioUsuario />} />
+              <Route path="reagendar-turno" element={<Reagendar />} />
             </Route>
           </Route>
 
@@ -85,8 +86,9 @@ function AppContent() {
           <Route element={<ProtectedRoute roles={['Profesor']} />}>
             <Route path="/profesor" element={<ProfesorLayout />}>
               <Route index element={<Navigate to="alumnos-profesor" replace />} />
-              <Route path="form-rutina"       element={<FormRutina />} />
-              <Route path="alumnos-profesor"  element={<AlumnosPorProfesor />} />
+              <Route path="form-rutina" element={<FormRutina />} />
+              <Route path="alumnos-profesor" element={<AlumnosPorProfesor />} />
+              <Route path="perfil" element={<PerfilProfesor />} />  {/* ← nuevo */}
             </Route>
           </Route>
 
@@ -94,13 +96,13 @@ function AppContent() {
           <Route element={<ProtectedRoute roles={['Administrador']} />}>
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="gastos" replace />} />
-              <Route path="alumnos"                element={<Alumnos />} />
-              <Route path="alumnos/nuevo"          element={<NuevoAlumno />} />
-              <Route path="profesores"             element={<Profesores />} />
+              <Route path="alumnos" element={<Alumnos />} />
+              <Route path="alumnos/nuevo" element={<NuevoAlumno />} />
+              <Route path="profesores" element={<Profesores />} />
               <Route path="profesores/nuevoprofesor" element={<NuevoProfesor />} />
-              <Route path="gastos"                 element={<Gastos />} />
-              <Route path="disciplinas"            element={<Disciplinas />} />
-              <Route path="servicios"              element={<Servicios />} />
+              <Route path="gastos" element={<Gastos />} />
+              <Route path="disciplinas" element={<Disciplinas />} />
+              <Route path="servicios" element={<Servicios />} />
             </Route>
           </Route>
 
@@ -108,11 +110,11 @@ function AppContent() {
           <Route element={<ProtectedRoute roles={['Recepcion']} />}>
             <Route path="/recepcion" element={<RecepcionLayout />}>
               <Route index element={<Navigate to="usuarios" replace />} />
-              <Route path="usuarios"   element={<Usuarios />} />
-              <Route path="caja"       element={<Caja />} />
+              <Route path="usuarios" element={<Usuarios />} />
+              <Route path="caja" element={<Caja />} />
               <Route path="inscripcion" element={<Inscripcion />} />
               <Route path="renovacion" element={<Renovacion />} />
-              <Route path="molinete"   element={<Molinete />} />
+              <Route path="molinete" element={<Molinete />} />
             </Route>
           </Route>
         </Routes>
