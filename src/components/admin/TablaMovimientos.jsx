@@ -1,14 +1,20 @@
+import { useState } from "react";
 import "../../styles/Admin.css";
+import PaginacionTabla from "../PaginacionTabla";
 
 export default function TablaMovimientos({
   movimientos,
   paginaActual,
   setPaginaActual,
-  filasPorPagina = 5,
+  filasPorPagina: filasPorPaginaProp,
+  setFilasPorPagina: setFilasPorPaginaProp,
 }) {
+  const [filasInternas, setFilasInternas] = useState(10);
+  const filasPorPagina = filasPorPaginaProp ?? filasInternas;
+  const setFilasPorPagina = setFilasPorPaginaProp ?? setFilasInternas;
+
   const inicio = (paginaActual - 1) * filasPorPagina;
   const movimientosPagina = movimientos.slice(inicio, inicio + filasPorPagina);
-  const totalPaginas = Math.ceil(movimientos.length / filasPorPagina);
 
   return (
     <>
@@ -16,34 +22,47 @@ export default function TablaMovimientos({
         <table className="table table-hover table-bordered align-middle">
           <thead className="table-light">
             <tr>
-              <th>Fecha</th>
+              <th>Fecha y Hora</th>
               <th>Tipo</th>
               <th>Categoría</th>
               <th>Descripción</th>
               <th>Monto</th>
+              <th>Usuario</th>
             </tr>
           </thead>
           <tbody>
             {movimientos.length > 0 ? (
-                movimientosPagina.map((m) => (
-                  <tr key={m.id}>
-                    <td>{m.fecha}</td>
-                    <td>
-                      <span
-                        className={`badge ${m.tipo === "Ingreso" ? "bg-success" : "bg-danger"
-                          }`}
-                      >
-                        {m.tipo}
-                      </span>
-                    </td>
-                    <td>{m.categoria}</td>
-                    <td>{m.descripcion}</td>
-                    <td>${m.monto.toLocaleString()}</td>
-                  </tr>
-                ))
+                movimientosPagina.map((m) => {
+                  const fechaHora = new Date(m.creado_en);
+                  const fecha = fechaHora.toLocaleDateString('es-AR');
+                  const hora = fechaHora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <tr key={m.id_movimiento}>
+                      <td>
+                        <small className="d-block">{fecha}</small>
+                        <small className="text-muted">{hora}</small>
+                      </td>
+                      <td>
+                        <span
+                          className={`badge ${m.tipo_m === "Ingreso" ? "bg-success" : "bg-danger"
+                            }`}
+                        >
+                          {m.tipo_m}
+                        </span>
+                      </td>
+                      <td>{m.categoria}</td>
+                      <td>{m.descripcion_m}</td>
+                      <td>${parseFloat(m.monto_m).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</td>
+                      <td>
+                        <small className="d-block">{m.usuario_nombre}</small>
+                        <small className="text-muted">{m.dni_u}</small>
+                      </td>
+                    </tr>
+                  );
+                })
                 ) : (
               <tr>
-                <td colSpan={5} className="text-muted py-4">
+                <td colSpan={6} className="text-muted text-center py-4">
                   No hay datos para mostrar
                 </td>
               </tr>
@@ -52,27 +71,13 @@ export default function TablaMovimientos({
         </table>
       </div>
 
-      {/* PAGINACIÓN */}
-      <nav className="d-flex justify-content-center">
-        <ul className="pagination">
-          {Array.from({ length: totalPaginas }).map((_, i) => (
-            <li
-              key={i}
-              className={`nav-item ${paginaActual === i + 1 ? "navlink-active" : ""
-                }`}
-            >
-              <button
-                className="nav-link"
-                onClick={() => setPaginaActual(i + 1)}
-              >
-                {i + 1}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
+      <PaginacionTabla
+        paginaActual={paginaActual}
+        setPaginaActual={setPaginaActual}
+        filasPorPagina={filasPorPagina}
+        setFilasPorPagina={setFilasPorPagina}
+        totalItems={movimientos.length}
+      />
     </>
-
   );
 }

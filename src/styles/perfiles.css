@@ -191,6 +191,15 @@
   margin: 0 auto;
 }
 
+.tabla-horario-usuario .dia-actual {
+  background-color: #e7f3ff;
+}
+
+.tabla-horario-usuario th.dia-actual {
+  background-color: var(--color-primary);
+  color: var(--white);
+}
+
 .input-progreso {
   width: 55px;
   box-sizing: border-box;

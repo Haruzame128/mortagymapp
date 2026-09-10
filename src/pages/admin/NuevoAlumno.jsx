@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { clientesApi } from "../../services/api";
 import FichaInscripcion from "../../components/admin/FichaInscripcion";
- 
+
 export default function NuevoAlumno() {
   const [searchParams]    = useSearchParams();
   const navigate          = useNavigate();
+  const location          = useLocation();
   const id                = searchParams.get("id");
+  const base              = location.pathname.startsWith("/recepcion") ? "/recepcion/usuarios" : "/admin/alumnos";
  
   const [datosIniciales, setDatosIniciales] = useState(null);
   const [loading,        setLoading]        = useState(!!id);
@@ -31,7 +33,7 @@ export default function NuevoAlumno() {
       modoEdicion={!!id}
       clienteId={id ? Number(id) : null}
       datosIniciales={datosIniciales}
-      onSubmit={() => navigate("/admin/alumnos")}
+      onSubmit={() => navigate(base)}
     />
   );
 }

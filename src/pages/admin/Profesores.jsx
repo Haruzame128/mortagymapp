@@ -1,105 +1,140 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import Modal from "react-modal";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import ModalAsistencia from "../../components/admin/ModalAsistencia";
+import { profesoresApi, contratosApi, disciplinasApi } from "../../services/api";
+import PaginacionTabla from "../../components/PaginacionTabla";
+import { abrirDialogoAptoMedico, badgeAptoMedico } from "../../utils/aptoMedico";
 import "../../styles/Admin.css";
-
-Modal.setAppElement("#root");
 
 export default function Profesores() {
   const navigate = useNavigate();
   const [paginaActual, setPaginaActual] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [profeSeleccionado, setProfeSeleccionado] = useState(null);
+  const [filasPorPagina, setFilasPorPagina] = useState(10);
+  const [profes, setProfes] = useState([]);
+  const [disciplinas, setDisciplinas] = useState([]);
+  const [filtroDisciplina, setFiltroDisciplina] = useState("");
+  const [cargando, setCargando] = useState(true);
 
-  const asistenciasMock = [
-    { fecha: "2025-09-01", entrada: "08:15", salida: "09:30" },
-    { fecha: "2025-09-03", entrada: "18:00", salida: "19:10" },
-    { fecha: "2025-09-05", entrada: "08:10", salida: "09:25" },
-  ];
 
-  const [mostrarAsistencia, setMostrarAsistencia] = useState(false);
+  useEffect(() => {
+    cargarProfesores();
+    disciplinasApi.getAll().then(setDisciplinas).catch(console.error);
+  }, []);
 
-  const profes = [
-    {
-      id: 1,
-      nombre: "Juan Pérez",
-      dni: "34567890",
-      disciplinas: "Musculación, Natación",
-      cuota: true,
-      ficha: true,
-      matricula: true,
-    },
-    {
-      id: 2,
-      nombre: "María López",
-      dni: "30123456",
-      disciplinas: "Funcional",
-      cuota: false,
-      ficha: true,
-      matricula: false,
-    },
-    {
-      id: 3,
-      nombre: "Martin Diaz",
-      dni: "28995412",
-      disciplinas: "Pilates",
-      cuota: false,
-      ficha: true,
-      matricula: false,
-    },
-    {
-      id: 4,
-      nombre: "Laura Rodriguez",
-      dni: "45002156",
-      disciplinas: "Natación",
-      cuota: false,
-      ficha: true,
-      matricula: true,
-    },
-    {
-      id: 5,
-      nombre: "Juan Carlos Chacón",
-      dni: "35002465",
-      disciplinas: "Funcional, Judo",
-      cuota: false,
-      ficha: true,
-      matricula: false,
-    },
-    {
-      id: 6,
-      nombre: "Manuel Muñoz",
-      dni: "44895777",
-      disciplinas: "Natación",
-      cuota: false,
-      ficha: true,
-      matricula: false,
-    },
-    {
-      id: 7,
-      nombre: "Antonio Suarez",
-      dni: "20554698",
-      disciplinas: "Pilates, Judo",
-      cuota: false,
-      ficha: true,
-      matricula: false,
-    },
-  ];
+  const cargarProfesores = async () => {
+    try {
+      setCargando(true);
+      const data = await profesoresApi.getAll();
+      setProfes(data || []);
+    } catch (error) {
+      console.error("Error cargando profesores:", error);
+      Swal.fire("Error", "No se pudieron cargar los profesores", "error");
+    } finally {
+      setCargando(false);
+    }
+  };
 
-  const filasPorPagina = 5; //Colocar el valor real, este es para probar
+  // La baja ahora es rescindir el contrato (requiere motivo); "reactivar" es
+  // dar de alta un contrato nuevo, así que se hace desde la ficha del profesor.
+  const handleDarDeBaja = async (profesor) => {
+    const { value: motivo } = await Swal.fire({
+      title: `¿Dar de baja a ${profesor.nomap_p}?`,
+      input: "textarea",
+      inputLabel: "Motivo de la baja",
+      inputPlaceholder: "Ej: renuncia, cierre de disciplina, etc.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc3545",
+      confirmButtonText: "Rescindir contrato",
+      cancelButtonText: "Cancelar",
+      inputValidator: (value) => !value && "El motivo es obligatorio",
+    });
+    if (!motivo) return;
+
+    try {
+      await contratosApi.rescindir(profesor.id_contrato, { motivo });
+      Swal.fire("Éxito", "Contrato rescindido, el profesor quedó inactivo", "success");
+      cargarProfesores();
+    } catch (error) {
+      const horarios = error.data?.horarios;
+      if (horarios?.length) {
+        const lista = horarios
+          .map((h) => `• ${h.nombre_d} / ${h.nombre_a} — ${h.dia_h} ${h.hora_h?.slice(0, 5)}`)
+          .join("<br>");
+        Swal.fire({
+          title: "No se puede dar de baja",
+          html: `Todavía tiene horarios asignados en la grilla:<br><br>${lista}<br><br>Quitalos desde la ficha del profesor y volvé a intentar.`,
+          icon: "warning",
+        });
+      } else {
+        Swal.fire("Error", error.message || "No se pudo rescindir el contrato", "error");
+      }
+    }
+  };
+
+  const handleRegistrarAptoMedico = (a) => abrirDialogoAptoMedico(
+    { nombre: a.nomap_p, fecha_entrega_ficha_medica: a.fecha_entrega_ficha_medica },
+    (fecha) => profesoresApi.setAptoMedico(a.id_profesor, fecha),
+    cargarProfesores
+  );
+
+  const estadoBadge = (a) => {
+    if (!a.id_contrato) return <span className="badge bg-secondary">Sin contrato</span>;
+    if (a.estado_contrato === "vigente") {
+      return (
+        <>
+          <span className="badge bg-success">Vigente</span>
+          {a.dias_para_vencer != null && a.dias_para_vencer <= 30 && (
+            <span className="badge bg-warning text-dark ms-1">
+              Vence en {a.dias_para_vencer}d
+            </span>
+          )}
+        </>
+      );
+    }
+    if (a.estado_contrato === "vencido") return <span className="badge bg-danger">Vencido</span>;
+    return <span className="badge bg-secondary">Rescindido</span>;
+  };
+
+  const profesFiltrados = profes.filter((a) =>
+    !filtroDisciplina || (a.disciplinas && a.disciplinas.includes(filtroDisciplina))
+  );
+
   const inicio = (paginaActual - 1) * filasPorPagina;
-  const profesPagina = profes.slice(inicio, inicio + filasPorPagina);
-  const totalPaginas = Math.ceil(profes.length / filasPorPagina);
+  const profesPagina = profesFiltrados.slice(inicio, inicio + filasPorPagina);
 
   return (
     <>
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3>Gestión de Profesores</h3>
+        <div>
+          <h3>Gestión de Profesores</h3>
+          <small className="text-muted">Total: <strong>{profesFiltrados.length}</strong> registros</small>
+        </div>
         <button className="btn btn-admin" onClick={() => navigate("/admin/profesores/nuevoprofesor")}>
           <i className="ri-add-line"></i> Nuevo profesor
         </button>
+      </div>
+
+      {/* FILTROS */}
+      <div className="card admin-card mb-3">
+        <div className="card-body">
+          <div className="row g-2">
+            <div className="col-md-3">
+              <label className="form-label">Disciplina</label>
+              <select
+                className="form-control form-control-sm"
+                value={filtroDisciplina}
+                onChange={(e) => { setFiltroDisciplina(e.target.value); setPaginaActual(1); }}
+              >
+                <option value="">-- Todas --</option>
+                {disciplinas.map((d) => (
+                  <option key={d.id_disciplina} value={d.nombre_d}>{d.nombre_d}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* TABLA */}
@@ -107,148 +142,101 @@ export default function Profesores() {
         <table className="table table-hover align-middle">
           <thead className="table-light">
             <tr>
-              <th>Nombre completo</th>
+              <th>Profesor</th>
               <th>DNI</th>
-              <th>Disciplinas</th>
-              <th>Porcentaje</th>
-              <th className="text-center">Opciones</th>
+              <th>Disciplina</th>
+              <th className="text-center">Contrato</th>
+              <th className="text-center">Apto médico</th>
+              <th className="text-center">Estado</th>
+              <th className="text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {profesPagina.map((a) => (
-              <tr key={a.id}>
-                <td>{a.nombre}</td>
-                <td>{a.dni}</td>
-                <td>{a.disciplinas}</td>
-                <td>20%</td>
-                <td className="text-center">
-                  <button
-                    className="btn btn-sm btn-outline-secondary me-2"
-                    onClick={() => {
-                      setProfeSeleccionado(a);
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    <i className="ri-eye-fill"></i>
-                  </button>
-
-                  <button
-                    className="btn btn-sm btn-outline-secondary me-2"
-                    onClick={() => setMostrarAsistencia(true)}
-                  >
-                    <i className="ri-calendar-2-fill"></i>
-                  </button>
-
-
-                  <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => navigate("/admin/profesores/nuevoprofesor")}>
-                    <i className="ri-pencil-fill"></i>
-                  </button>
-
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => {
-                      Swal.fire({
-                        title: "¿Eliminar profesor?",
-                        text: "Se eliminará el profesor de los registros",
-                        icon: "warning",
-                        showCancelButton: true,
-                        confirmButtonColor: "#dc3545",
-                        confirmButtonText: "Sí, eliminar",
-                        cancelButtonText: "Cancelar",
-                      }).then((result) => {
-                        if (result.isConfirmed) {
-                          console.log("Profesor eliminado:", d.id);
-                        }
-                      });
-                    }}
-                  >
-                    <i className="ri-close-circle-fill"></i>
-                  </button>
-
-                </td>
+            {cargando ? (
+              <tr>
+                <td colSpan="7" className="text-center py-4">Cargando...</td>
               </tr>
-            ))}
+            ) : profesPagina.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center py-4">No hay profesores registrados</td>
+              </tr>
+            ) : (
+              profesPagina.map((a) => {
+                const esActivo = a.activo_p !== false;
+                return (
+                  <tr key={a.id_profesor || a.id}>
+                    <td className="fw-bold">{a.nomap_p || a.nombre || '-'}</td>
+                    <td>{a.dni_u || '-'}</td>
+                    <td>{a.disciplinas?.length ? a.disciplinas.join(', ') : '-'}</td>
+                    <td className="text-center">{estadoBadge(a)}</td>
+                    <td className="text-center">
+                      <button
+                        className={`btn btn-xs badge border-0 cursor-pointer ${badgeAptoMedico(a.estado_ficha_medica).clase}`}
+                        onClick={() => handleRegistrarAptoMedico(a)}
+                        title="Click para registrar la entrega del certificado médico"
+                      >
+                        {badgeAptoMedico(a.estado_ficha_medica).texto}
+                      </button>
+                    </td>
+                    <td className="text-center">
+                      {esActivo ? (
+                        <span className="badge bg-success">Activo</span>
+                      ) : (
+                        <span className="badge bg-danger">Inactivo</span>
+                      )}
+                    </td>
+                    <td className="text-center">
+                      <div className="btn-group btn-group-sm" role="group">
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate(`/admin/profesores/${a.id_profesor || a.id}`)}
+                          title="Ver información"
+                        >
+                          <i className="ri-eye-line"></i>
+                        </button>
+
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate(`/admin/profesores/${a.id_profesor || a.id}/editar`)}
+                          title="Editar profesor"
+                        >
+                          <i className="ri-pencil-fill"></i>
+                        </button>
+
+                        {esActivo ? (
+                          <button
+                            className="btn btn-outline-danger"
+                            onClick={() => handleDarDeBaja(a)}
+                            title="Dar de baja"
+                          >
+                            <i className="ri-close-circle-fill"></i>
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-outline-success"
+                            onClick={() => navigate(`/admin/profesores/${a.id_profesor || a.id}/editar`)}
+                            title="Reactivar (dar de alta un nuevo contrato)"
+                          >
+                            <i className="ri-play-circle-fill"></i>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* PAGINACIÓN */}
-      <nav className="d-flex justify-content-center">
-        <ul className="pagination">
-          {Array.from({ length: totalPaginas }).map((_, i) => (
-            <li
-              key={i}
-              className={`nav-item ${paginaActual === i + 1 ? "navlink-active" : ""}`}
-            >
-              <button
-                className="nav-link"
-                onClick={() => setPaginaActual(i + 1)}
-              >
-                {i + 1}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* MODALES */}
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => {
-          setIsModalOpen(false);
-          setProfeSeleccionado(null);
-        }}
-        contentLabel="Detalle del profesor"
-        className="modal-react"
-        overlayClassName="modal-overlay"
-      >
-        <div className="modal-header">
-          <h5 className="modal-title">Información del profesor</h5>
-          <button
-            type="button"
-            className="close"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <span>&times;</span>
-          </button>
-        </div>
-
-        <div className="modal-body">
-          {profeSeleccionado && (
-            <ul className="list-group list-group-flush">
-              <li className="list-group-item">
-                <strong>Nombre completo:</strong> {profeSeleccionado.nombre}
-              </li>
-              <li className="list-group-item">
-                <strong>DNI:</strong> {profeSeleccionado.dni}
-              </li>
-              <li className="list-group-item">
-                <strong>Disciplinas:</strong> {profeSeleccionado.disciplinas}
-              </li>
-              <li className="list-group-item">
-                <strong>Porcentaje:</strong> 20%
-              </li>
-            </ul>
-          )}
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn btn-admin me-2"> Ver Asistencia </button>
-          <button
-            className="btn btn-secondary"
-            onClick={() => setIsModalOpen(false)}
-          >
-            Cerrar
-          </button>
-        </div>
-      </Modal>
-
-      <ModalAsistencia
-        isOpen={mostrarAsistencia}
-        onClose={() => setMostrarAsistencia(false)}
-        asistencias={asistenciasMock}
+      <PaginacionTabla
+        paginaActual={paginaActual}
+        setPaginaActual={setPaginaActual}
+        filasPorPagina={filasPorPagina}
+        setFilasPorPagina={setFilasPorPagina}
+        totalItems={profesFiltrados.length}
       />
-
     </>
   );
 }

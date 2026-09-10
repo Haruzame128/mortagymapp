@@ -11,14 +11,16 @@ export default function Reagendar() {
 
     const [horarios, setHorarios] = useState([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
     const [turnoSeleccionado, setTurnoSeleccionado] = useState(null) // { id_reserva, id_horario, dia_h, hora_h }
     const navigate = useNavigate()
 
     const cargarHorarios = () => {
         setLoading(true)
+        setError(null)
         perfilApi.getHorariosMus()
             .then(setHorarios)
-            .catch(console.error)
+            .catch(err => setError(err))
             .finally(() => setLoading(false))
     }
 
@@ -27,6 +29,15 @@ export default function Reagendar() {
     if (loading) return (
         <div className="text-center py-5">
             <div className="spinner-border text-secondary" role="status" />
+        </div>
+    )
+
+    if (error) return (
+        <div className="text-center py-5">
+            <p className="text-muted mb-3">No se pudieron cargar los turnos disponibles.</p>
+            <button className="btn btn-outline-primary" onClick={cargarHorarios}>
+                Reintentar
+            </button>
         </div>
     )
 
@@ -87,6 +98,10 @@ export default function Reagendar() {
                 </div>
             )}
 
+            {horarios.length === 0 ? (
+                <p className="text-center text-muted py-4">No hay turnos de musculación configurados.</p>
+            ) : (
+            <div className="tabla-container">
             <table className="table table-bordered text-center align-middle tabla-perfiles">
                 <thead className="table-light">
                     <tr>
@@ -137,6 +152,8 @@ export default function Reagendar() {
                     ))}
                 </tbody>
             </table>
+            </div>
+            )}
 
             <div className="d-flex gap-3 mt-3 small text-muted justify-content-center flex-wrap">
                 <span><span className="badge mi-turno px-2 me-1">&nbsp;</span> Tu turno</span>

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Modal from "react-modal";
 import Swal from "sweetalert2";
 import { serviciosApi } from "../../services/api";
+import PaginacionTabla from "../../components/PaginacionTabla";
 import "../../styles/Admin.css";
 
 Modal.setAppElement("#root");
@@ -18,6 +19,7 @@ export default function Servicios() {
   const [servicios,            setServicios]            = useState([]);
   const [loading,              setLoading]              = useState(true);
   const [paginaActual,         setPaginaActual]         = useState(1);
+  const [filasPorPagina,       setFilasPorPagina]       = useState(10);
 
   const [isModalOpen,          setIsModalOpen]          = useState(false);
   const [modoNuevo,            setModoNuevo]            = useState(false);
@@ -42,10 +44,8 @@ export default function Servicios() {
   useEffect(() => { cargarServicios(); }, []);
 
   // ── Paginación ──────────────────────────────────────────────────
-  const filasPorPagina = 5;
   const inicio = (paginaActual - 1) * filasPorPagina;
   const serviciosPagina = servicios.slice(inicio, inicio + filasPorPagina);
-  const totalPaginas = Math.ceil(servicios.length / filasPorPagina);
 
   // ── Abrir modal nuevo ───────────────────────────────────────────
   const abrirNuevo = () => {
@@ -180,20 +180,22 @@ export default function Servicios() {
                     </span>
                   </td>
                   <td className="text-center">
-                    <button
-                      className="btn btn-sm btn-outline-secondary me-1"
-                      title="Editar"
-                      onClick={() => abrirEditar(s)}
-                    >
-                      <i className="ri-pencil-fill"></i>
-                    </button>
-                    <button
-                      className={`btn btn-sm ${s.activo_s ? "btn-outline-danger" : "btn-outline-success"}`}
-                      title={s.activo_s ? "Deshabilitar" : "Habilitar"}
-                      onClick={() => handleToggleActivo(s)}
-                    >
-                      <i className={s.activo_s ? "ri-close-circle-fill" : "ri-checkbox-circle-fill"}></i>
-                    </button>
+                    <div className="d-flex justify-content-center flex-wrap gap-1">
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        title="Editar"
+                        onClick={() => abrirEditar(s)}
+                      >
+                        <i className="ri-pencil-fill"></i>
+                      </button>
+                      <button
+                        className={`btn btn-sm ${s.activo_s ? "btn-outline-danger" : "btn-outline-success"}`}
+                        title={s.activo_s ? "Deshabilitar" : "Habilitar"}
+                        onClick={() => handleToggleActivo(s)}
+                      >
+                        <i className={s.activo_s ? "ri-close-circle-fill" : "ri-checkbox-circle-fill"}></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -202,18 +204,13 @@ export default function Servicios() {
         </div>
       )}
 
-      {/* PAGINACIÓN */}
-      <nav className="d-flex justify-content-center">
-        <ul className="pagination">
-          {Array.from({ length: totalPaginas }).map((_, i) => (
-            <li key={i} className={`nav-item ${paginaActual === i + 1 ? "navlink-active" : ""}`}>
-              <button className="nav-link" onClick={() => setPaginaActual(i + 1)}>
-                {i + 1}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <PaginacionTabla
+        paginaActual={paginaActual}
+        setPaginaActual={setPaginaActual}
+        filasPorPagina={filasPorPagina}
+        setFilasPorPagina={setFilasPorPagina}
+        totalItems={servicios.length}
+      />
 
       {/* MODAL */}
       <Modal

@@ -2,6 +2,7 @@ export default function HuellaModal({ isOpen, status, step, error, onClose, onRe
   if (!isOpen) return null
   const isDone = status === 'done'
   const isError = status === 'error'
+  const isDuplicado = status === 'duplicado'
   const isWorking = ['starting','waiting','lift','processing'].includes(status)
 
   return (
@@ -52,6 +53,14 @@ export default function HuellaModal({ isOpen, status, step, error, onClose, onRe
                 <div className="text-muted small mt-1">Las 3 capturas fueron fusionadas correctamente.</div>
               </div>
             )}
+            {isDuplicado && (
+              <div className="py-2 mb-2">
+                <div style={{ fontSize: '2.5rem' }}>🖐⚠️</div>
+                <div className="fw-bold mt-2" style={{ color: '#c98a00' }}>Dedo repetido</div>
+                <div className="text-muted small mt-1">{error}</div>
+                <button className="btn btn-sm btn-outline-primary mt-2" onClick={onRetry}>Probar con otro dedo</button>
+              </div>
+            )}
             {isError && (
               <div className="py-2 mb-2">
                 <div style={{ fontSize: '2.5rem' }}>❌</div>
@@ -62,7 +71,7 @@ export default function HuellaModal({ isOpen, status, step, error, onClose, onRe
           </div>
           <div className="modal-footer border-0 justify-content-center pb-4">
             <button type="button" className="btn btn-outline-secondary px-4" onClick={onClose}>
-              {isDone ? 'Cerrar' : 'Cancelar'}
+              {isDone || isDuplicado ? 'Cerrar' : 'Cancelar'}
             </button>
           </div>
         </div>

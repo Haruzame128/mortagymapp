@@ -1,0 +1,215 @@
+{
+  "getSueldosMes": {
+    "endpoint": "GET /api/admin/sueldos?mes=2025-01",
+    "response": [
+      {
+        "profesor_id": 1,
+        "profesor_nombre": "Juan Pérez",
+        "porcentaje": 20,
+        "clientes_pagos": 15,
+        "monto": 7500.50,
+        "estado": "Pendiente"
+      },
+      {
+        "profesor_id": 2,
+        "profesor_nombre": "María López",
+        "porcentaje": 15,
+        "clientes_pagos": 8,
+        "monto": 3200.00,
+        "estado": "Pagado"
+      },
+      {
+        "profesor_id": 3,
+        "profesor_nombre": "Martin Diaz",
+        "porcentaje": 18,
+        "clientes_pagos": 12,
+        "monto": 4320.00,
+        "estado": "Pendiente"
+      },
+      {
+        "profesor_id": 4,
+        "profesor_nombre": "Laura Rodriguez",
+        "porcentaje": 22,
+        "clientes_pagos": 10,
+        "monto": 2200.00,
+        "estado": "Pagado"
+      }
+    ]
+  },
+  "getHistorial": {
+    "endpoint": "GET /api/admin/sueldos/historial",
+    "response": [
+      {
+        "id": 1,
+        "profesor_id": 1,
+        "profesor_nombre": "Juan Pérez",
+        "mes": "2025-01",
+        "monto": 7500.50,
+        "medio_pago": "Transferencia",
+        "numero_comprobante": "TRF-001",
+        "observaciones": "Pago mensual enero",
+        "fecha_pago": "2025-02-01",
+        "creado_en": "2025-02-01T10:30:00Z"
+      },
+      {
+        "id": 2,
+        "profesor_id": 2,
+        "profesor_nombre": "María López",
+        "mes": "2025-01",
+        "monto": 3200.00,
+        "medio_pago": "Efectivo",
+        "numero_comprobante": null,
+        "observaciones": "En mano",
+        "fecha_pago": "2025-02-02",
+        "creado_en": "2025-02-02T14:15:00Z"
+      },
+      {
+        "id": 3,
+        "profesor_id": 1,
+        "profesor_nombre": "Juan Pérez",
+        "mes": "2024-12",
+        "monto": 7200.00,
+        "medio_pago": "Débito",
+        "numero_comprobante": "DBT-125",
+        "observaciones": null,
+        "fecha_pago": "2025-01-15",
+        "creado_en": "2025-01-15T09:00:00Z"
+      },
+      {
+        "id": 4,
+        "profesor_id": 3,
+        "profesor_nombre": "Martin Diaz",
+        "mes": "2024-12",
+        "monto": 4100.00,
+        "medio_pago": "Transferencia",
+        "numero_comprobante": "TRF-120",
+        "observaciones": "Diciembre",
+        "fecha_pago": "2025-01-14",
+        "creado_en": "2025-01-14T11:22:00Z"
+      }
+    ]
+  },
+  "getDetalleProfesor": {
+    "endpoint": "GET /api/admin/sueldos/profesor/1?mes=2025-01",
+    "response": {
+      "profesor_id": 1,
+      "profesor_nombre": "Juan Pérez",
+      "porcentaje": 20,
+      "mes": "2025-01",
+      "clientes_detalle": [
+        {
+          "cliente_id": 10,
+          "cliente_nombre": "Pedro González",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 11,
+          "cliente_nombre": "Ana Martínez",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 12,
+          "cliente_nombre": "Carlos López",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 13,
+          "cliente_nombre": "Sofía Rodríguez",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 14,
+          "cliente_nombre": "Diego Fernández",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 15,
+          "cliente_nombre": "Lucía García",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 16,
+          "cliente_nombre": "Roberto Martín",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 17,
+          "cliente_nombre": "Beatriz Sánchez",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 18,
+          "cliente_nombre": "Miguel Ángel Ruiz",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 19,
+          "cliente_nombre": "Valeria Ortiz",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 20,
+          "cliente_nombre": "Francisco Morales",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 21,
+          "cliente_nombre": "Gabriela Cruz",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 22,
+          "cliente_nombre": "Julián Herrera",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 23,
+          "cliente_nombre": "Florencia Díaz",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        },
+        {
+          "cliente_id": 24,
+          "cliente_nombre": "Manuel Iglesias",
+          "inscripcion_precio": 500,
+          "estado_pago": "Pagado"
+        }
+      ],
+      "clientes_pagos": 15,
+      "monto_base": 7500,
+      "monto_final": 1500,
+      "estado": "Pendiente"
+    }
+  },
+  "registrarPago": {
+    "endpoint": "POST /api/admin/sueldos/pago",
+    "request": {
+      "profesor_id": 1,
+      "profesor_nombre": "Juan Pérez",
+      "mes": "2025-01",
+      "monto": 7500.50,
+      "medio_pago": "Transferencia",
+      "numero_comprobante": "TRF-001",
+      "observaciones": "Pago mensual enero",
+      "fecha": "2025-02-01"
+    },
+    "response": {
+      "id": 1,
+      "success": true,
+      "message": "Sueldo registrado correctamente"
+    }
+  }
+}

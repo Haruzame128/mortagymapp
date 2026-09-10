@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import { useHuellaEnrollment } from '../../hooks/useHuellaEnrollment'
 import HuellaModal from '../HuellaModal'
 import Swal from "sweetalert2";
-import { clientesApi, disciplinasApi, actividadesApi, horariosApi } from '../../services/api'
+import { clientesApi, disciplinasApi, actividadesApi, horariosApi, fichaConfigApi } from '../../services/api'
+import generarFichaInscripcionPDF, { normalizarInscripcionExistente } from '../../utils/generarFichaInscripcionPDF'
+import { PREGUNTAS_CLINICA, FORM_VACIO_CLINICA, mapearFichaDB, armarFichaMedicaPayload } from '../../utils/fichaMedica'
+import { tieneConProfesor, calcularPrecio } from '../../utils/preciosDisciplina'
 
 const TIPOS_PAGO = ['efectivo', 'transferencia', 'tarjeta', 'mercadopago']
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
@@ -13,51 +16,13 @@ const INSC_VACIA = {
   id_horario: null, cantidad_dias: '',
   tipo_pago: 'efectivo', pago: false,
   permiso_salida: false, permiso_fotos_redes: false, precio_calculado: 0,
+  con_profesor: null, // true/false solo si la disciplina ofrece esa modalidad (ej. Natación)
 }
 
 const FORM_VACIO = {
   apellidoNombre: "", dni: "", direccion: "", telefono1: "",
   telefonoEmergencia: "", fechaNacimiento: "",
-  altura: "", peso: "", grupoSanguineo: "",
-  patologiaColumna: false, otrasPatologias: false, otrasPatologiasDetalle: "",
-  enfermedadCardiaca: false, enfermedadCardiacaDetalle: "",
-  lesiones: false, lesionesDetalle: "",
-  practicaDeportes: false, practicaDeportesDetalle: "",
-  mareos: false, dolorCabeza: false, desmayos: false, hemorragiasNasales: false,
-  doloresArticulaciones: false, piePlano: false, problemasRodillaTobillo: false,
-  cirugias: false, convulsiones: false, problemasRespiratorios: false,
-  medicacion: false, medicacionDetalle: "",
-  alergico: false, alergicoDetalle: "",
-}
-
-// Mapea ficha_medica de la DB (snake_case) al formData (camelCase)
-const mapearFichaDB = (f) => !f ? {} : {
-  altura: f.altura || '',
-  peso: f.peso || '',
-  grupoSanguineo: f.grupo_sanguineo || '',
-  patologiaColumna: f.patologia_columna || false,
-  otrasPatologias: f.otras_patologias || false,
-  otrasPatologiasDetalle: f.otras_patologias_det || '',
-  enfermedadCardiaca: f.enf_cardiaca || false,
-  enfermedadCardiacaDetalle: f.enf_cardiaca_det || '',
-  lesiones: f.lesiones || false,
-  lesionesDetalle: f.lesiones_det || '',
-  practicaDeportes: f.practica_deportes || false,
-  practicaDeportesDetalle: f.practica_deportes_det || '',
-  mareos: f.mareos || false,
-  dolorCabeza: f.dolor_cabeza || false,
-  desmayos: f.desmayos || false,
-  hemorragiasNasales: f.hemorragias_nasales || false,
-  doloresArticulaciones: f.dolores_articulaciones || false,
-  piePlano: f.pie_plano || false,
-  problemasRodillaTobillo: f.problemas_rodilla || false,
-  cirugias: f.cirugias || false,
-  convulsiones: f.convulsiones || false,
-  problemasRespiratorios: f.problemas_respiratorios || false,
-  medicacion: f.medicacion || false,
-  medicacionDetalle: f.medicacion_det || '',
-  alergico: f.alergico || false,
-  alergicoDetalle: f.alergico_det || '',
+  ...FORM_VACIO_CLINICA,
 }
 
 export default function FichaInscripcion({
@@ -112,6 +77,7 @@ export default function FichaInscripcion({
   // Helpers derivados
   const actividadActual = actividades.find(a => Number(a.id_actividad) === Number(inscActual.id_actividad))
   const esFijo = actividadActual?.tipo_a === 'fijo'
+  const conProfesorDisponible = tieneConProfesor(preciosDisciplina)
   const paquetes = esFijo && horarios.length > 0
     ? Object.entries(
       horarios.reduce((acc, h) => {
@@ -133,7 +99,7 @@ export default function FichaInscripcion({
   useEffect(() => {
     if (!inscActual.id_disciplina || disciplinas.length === 0) {
       setActividades([]); setHorarios([]); setPreciosDisciplina(null)
-      setInscActual(prev => ({ ...prev, id_actividad: '', slots_elegidos: [], paquete_elegido: null, horarios_paquete: [], id_horario: null, cantidad_dias: '', precio_calculado: 0 }))
+      setInscActual(prev => ({ ...prev, id_actividad: '', slots_elegidos: [], paquete_elegido: null, horarios_paquete: [], id_horario: null, cantidad_dias: '', precio_calculado: 0, con_profesor: null }))
       return
     }
     const disc = disciplinas.find(d => Number(d.id_disciplina) === Number(inscActual.id_disciplina))
@@ -143,7 +109,11 @@ export default function FichaInscripcion({
         const unicas = Object.values(data.reduce((acc, a) => { acc[a.id_actividad] = a; return acc }, {}))
         setActividades(unicas)
       }).catch(console.error)
-    setInscActual(prev => ({ ...prev, id_actividad: '', slots_elegidos: [], paquete_elegido: null, horarios_paquete: [], id_horario: null, cantidad_dias: '', precio_calculado: 0 }))
+    setInscActual(prev => ({
+      ...prev, id_actividad: '', slots_elegidos: [], paquete_elegido: null, horarios_paquete: [],
+      id_horario: null, cantidad_dias: '', precio_calculado: 0,
+      con_profesor: tieneConProfesor(disc) ? false : null,
+    }))
   }, [inscActual.id_disciplina, disciplinas])
 
   useEffect(() => {
@@ -162,7 +132,7 @@ export default function FichaInscripcion({
   // ── Handlers ───────────────────────────────────────────────────
   const handleCantidadDias = (valor) => {
     const n = parseInt(valor) || 0
-    const precio = n > 0 && preciosDisciplina ? Number(preciosDisciplina[`precio_${n}`] || 0) : 0
+    const precio = calcularPrecio(preciosDisciplina, n, inscActual.con_profesor)
     if (!esFijo) {
       const slots = Array.from({ length: n }, () => ({ dia: '', id_horario: '' }))
       setInscActual(prev => ({ ...prev, cantidad_dias: valor, slots_elegidos: slots, precio_calculado: precio }))
@@ -172,8 +142,14 @@ export default function FichaInscripcion({
   }
 
   const handlePaqueteElegido = (paq) => {
-    const precio = preciosDisciplina ? Number(preciosDisciplina[`precio_${paq.cantidad}`] || 0) : 0
+    const precio = calcularPrecio(preciosDisciplina, paq.cantidad, inscActual.con_profesor)
     setInscActual(prev => ({ ...prev, paquete_elegido: paq.hora, horarios_paquete: paq.horarios, cantidad_dias: paq.cantidad, precio_calculado: precio }))
+  }
+
+  const handleConProfesor = (conProfesor) => {
+    const n = Number(inscActual.cantidad_dias) || 0
+    const precio = calcularPrecio(preciosDisciplina, n, conProfesor)
+    setInscActual(prev => ({ ...prev, con_profesor: conProfesor, precio_calculado: precio }))
   }
 
   const handleSlotDia = (idx, dia) => {
@@ -202,7 +178,9 @@ export default function FichaInscripcion({
         cantidad_dias: Number(inscActual.cantidad_dias), tipo_pago: inscActual.tipo_pago,
         pago: inscActual.pago, permiso_salida: inscActual.permiso_salida,
         permiso_fotos_redes: inscActual.permiso_fotos_redes, precio_calculado: inscActual.precio_calculado,
+        con_profesor: inscActual.con_profesor,
         _label_actividad: actividad?.nombre_a, _label_disciplina: disciplina?.nombre_d, _label_horario: labelHorario,
+        _label_modalidad: inscActual.con_profesor == null ? null : (inscActual.con_profesor ? 'Con profesor' : 'Sin profesor'),
       }])
     } else {
       if (!inscActual.cantidad_dias) { alert('Seleccioná los días por semana'); return }
@@ -216,8 +194,10 @@ export default function FichaInscripcion({
           cantidad_dias: Number(inscActual.cantidad_dias), tipo_pago: inscActual.tipo_pago,
           pago: inscActual.pago, permiso_salida: inscActual.permiso_salida,
           permiso_fotos_redes: inscActual.permiso_fotos_redes, precio_calculado: inscActual.precio_calculado,
+          con_profesor: inscActual.con_profesor,
           _label_actividad: actividad?.nombre_a, _label_disciplina: disciplina?.nombre_d,
           _label_horario: `${horario?.dia_h} ${horario?.hora_h?.slice(0, 5)}${horario?.profesor_nombre ? ` — ${horario.profesor_nombre}` : ''}`,
+          _label_modalidad: inscActual.con_profesor == null ? null : (inscActual.con_profesor ? 'Con profesor' : 'Sin profesor'),
         }
       })
       setInscAgregadas(prev => [...prev, ...nuevas])
@@ -235,27 +215,28 @@ export default function FichaInscripcion({
     if (!dni || dni.length < 7) { alert('Ingresá el DNI antes de registrar la huella'); return }
     setModalOpen(true); enroll.start(dni)
   }
-  const handleCloseModal = () => { if (enroll.status !== 'done') enroll.cancel(); setModalOpen(false) }
+  const handleCloseModal = () => {
+    if (!['done', 'duplicado'].includes(enroll.status)) enroll.cancel()
+    setModalOpen(false)
+  }
+
+  // Trae los datos del gimnasio/condiciones y arma la ficha con el plan
+  // completo del cliente (lo que ya tenía + lo que se acaba de agregar).
+  const emitirFicha = async (inscripcionesNuevas) => {
+    const config = await fichaConfigApi.get().catch(() => null)
+    const existentesNormalizadas = inscExistentes.map(i => normalizarInscripcionExistente(i, disciplinas))
+    generarFichaInscripcionPDF({
+      formData,
+      inscripciones: [...existentesNormalizadas, ...inscripcionesNuevas],
+      config,
+    })
+  }
 
   // ── Submit ─────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const fichaData = {
-        altura: formData.altura || null, peso: formData.peso || null,
-        grupoSanguineo: formData.grupoSanguineo || null,
-        patologiaColumna: formData.patologiaColumna, otrasPatologias: formData.otrasPatologias,
-        otrasPatologiasDetalle: formData.otrasPatologiasDetalle || null,
-        enfermedadCardiaca: formData.enfermedadCardiaca, enfermedadCardiacaDetalle: formData.enfermedadCardiacaDetalle || null,
-        lesiones: formData.lesiones, lesionesDetalle: formData.lesionesDetalle || null,
-        practicaDeportes: formData.practicaDeportes, practicaDeportesDetalle: formData.practicaDeportesDetalle || null,
-        mareos: formData.mareos, dolorCabeza: formData.dolorCabeza, desmayos: formData.desmayos,
-        hemorragiasNasales: formData.hemorragiasNasales, doloresArticulaciones: formData.doloresArticulaciones,
-        piePlano: formData.piePlano, problemasRodillaTobillo: formData.problemasRodillaTobillo,
-        cirugias: formData.cirugias, convulsiones: formData.convulsiones, problemasRespiratorios: formData.problemasRespiratorios,
-        medicacion: formData.medicacion, medicacionDetalle: formData.medicacionDetalle || null,
-        alergico: formData.alergico, alergicoDetalle: formData.alergicoDetalle || null,
-      }
+      const fichaData = armarFichaMedicaPayload(formData)
 
       if (modoEdicion) {
         // 1. Actualizar datos personales
@@ -270,6 +251,11 @@ export default function FichaInscripcion({
         // 2. Upsert ficha médica
         await clientesApi.updateFicha(clienteId, fichaData)
 
+        // 2b. Si se capturó una huella nueva, agregarla (no reemplaza las anteriores)
+        if (templateHuella) {
+          await clientesApi.addHuella(clienteId, templateHuella)
+        }
+
         // 3. Agregar nuevas inscripciones si las hay
         if (inscAgregadas.length > 0) {
           const inscripciones = inscAgregadas.flatMap(i => {
@@ -278,17 +264,24 @@ export default function FichaInscripcion({
                 id_actividad: i.id_actividad, id_horario: Number(h.id_horario),
                 cantidad_dias: i.cantidad_dias, tipo_pago: i.tipo_pago,
                 pago: i.pago, permiso_salida: i.permiso_salida, permiso_fotos_redes: i.permiso_fotos_redes,
+                con_profesor: i.con_profesor,
               }))
             }
             return [{
               id_actividad: i.id_actividad, id_horario: i.id_horario, cantidad_dias: i.cantidad_dias,
-              tipo_pago: i.tipo_pago, pago: i.pago, permiso_salida: i.permiso_salida, permiso_fotos_redes: i.permiso_fotos_redes
+              tipo_pago: i.tipo_pago, pago: i.pago, permiso_salida: i.permiso_salida, permiso_fotos_redes: i.permiso_fotos_redes,
+              con_profesor: i.con_profesor,
             }]
           })
           await clientesApi.addInscripciones(clienteId, { inscripciones })
         }
 
         Swal.fire('¡Listo!', 'Cliente actualizado correctamente', 'success')
+
+        // Solo hace falta papelería nueva si se contrató algo nuevo en esta edición.
+        if (inscAgregadas.length > 0) {
+          await emitirFicha(inscAgregadas)
+        }
       } else {
         // Crear nuevo cliente
         const inscripciones = inscAgregadas.flatMap(i => {
@@ -297,21 +290,27 @@ export default function FichaInscripcion({
               id_actividad: i.id_actividad, id_horario: Number(h.id_horario),
               cantidad_dias: i.cantidad_dias, tipo_pago: i.tipo_pago,
               pago: i.pago, permiso_salida: i.permiso_salida, permiso_fotos_redes: i.permiso_fotos_redes,
+              con_profesor: i.con_profesor,
             }))
           }
           return [{
             id_actividad: i.id_actividad, id_horario: i.id_horario, cantidad_dias: i.cantidad_dias,
-            tipo_pago: i.tipo_pago, pago: i.pago, permiso_salida: i.permiso_salida, permiso_fotos_redes: i.permiso_fotos_redes
+            tipo_pago: i.tipo_pago, pago: i.pago, permiso_salida: i.permiso_salida, permiso_fotos_redes: i.permiso_fotos_redes,
+            con_profesor: i.con_profesor,
           }]
         })
         const data = await clientesApi.create({
           dni: parseInt(formData.dni, 10), nombre_apellido: formData.apellidoNombre,
           direccion: formData.direccion || undefined, telefono: formData.telefono1 || undefined,
           tel_emergencia: formData.telefonoEmergencia || undefined, fecha_nac: formData.fechaNacimiento || undefined,
-          template_huella: templateHuella || undefined, contrasena: String(formData.dni),
+          contrasena: String(formData.dni),
           ficha_medica: fichaData, inscripciones,
         })
+        if (templateHuella) {
+          await clientesApi.addHuella(data.id_cliente, templateHuella)
+        }
         Swal.fire('¡Listo!', `Cliente ${data.nombre_apellido} guardado`, 'success')
+        await emitirFicha(inscAgregadas)
       }
 
       if (onSubmit) onSubmit()
@@ -458,6 +457,19 @@ export default function FichaInscripcion({
                 </div>
               </div>
 
+              {conProfesorDisponible && inscActual.id_actividad && (
+                <div className="row mb-3">
+                  <div className="col-md-4">
+                    <label className="form-label">Modalidad</label>
+                    <select className="form-select" value={inscActual.con_profesor ? 'con' : 'sin'}
+                      onChange={e => handleConProfesor(e.target.value === 'con')}>
+                      <option value="con">Con profesor</option>
+                      <option value="sin">Sin profesor</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
               {/* ── FLUJO VARIABLE ── */}
               {inscActual.id_actividad && !esFijo && (
                 <>
@@ -532,7 +544,7 @@ export default function FichaInscripcion({
                     <>
                       <label className="form-label fw-semibold mb-2">Seleccioná un paquete de horarios</label>
                       {paquetes.map((paq, idx) => {
-                        const precio = preciosDisciplina ? Number(preciosDisciplina[`precio_${paq.cantidad}`] || 0) : 0
+                        const precio = calcularPrecio(preciosDisciplina, paq.cantidad, inscActual.con_profesor)
                         const seleccionado = inscActual.paquete_elegido === paq.hora
                         return (
                           <div key={idx}
@@ -613,6 +625,7 @@ export default function FichaInscripcion({
                         <span>{i._label_actividad}</span>
                         {i._label_horario && <><span className="text-muted mx-1">—</span><span className="small text-muted">{i._label_horario}</span></>}
                         {i._tipo_a === 'fijo' && <><span className="text-muted mx-2">|</span><span className="small">{i.cantidad_dias} día{i.cantidad_dias > 1 ? 's' : ''}/sem</span></>}
+                        {i._label_modalidad && <span className="ms-2 badge bg-secondary">{i._label_modalidad}</span>}
                         {i.precio_calculado > 0 && <span className="ms-2 badge bg-success">${Number(i.precio_calculado).toLocaleString('es-AR')}</span>}
                       </div>
                       <button type="button" className="btn btn-sm btn-outline-danger" onClick={() => handleQuitarInscripcion(idx)}>
@@ -657,33 +670,15 @@ export default function FichaInscripcion({
               </div>
               <label className="mb-3 fw-semibold">Marque lo que corresponda:</label>
               <div className="row">
-                {[
-                  ['patologiaColumna', 'Patología de columna', false],
-                  ['otrasPatologias', 'Otras patologías óseas', 'otrasPatologiasDetalle'],
-                  ['enfermedadCardiaca', 'Enfermedades cardíacas', 'enfermedadCardiacaDetalle'],
-                  ['lesiones', 'Lesiones recientes', 'lesionesDetalle'],
-                  ['practicaDeportes', 'Practica otros deportes', 'practicaDeportesDetalle'],
-                  ['mareos', 'Sufre mareos', false],
-                  ['dolorCabeza', 'Dolor de cabeza frecuente', false],
-                  ['desmayos', 'Ha sufrido desmayos', false],
-                  ['hemorragiasNasales', 'Hemorragias nasales', false],
-                  ['doloresArticulaciones', 'Dolores articulares', false],
-                  ['piePlano', 'Pie plano u otra alteración', false],
-                  ['problemasRodillaTobillo', 'Problemas de rodilla/tobillo', false],
-                  ['cirugias', 'Intervenciones quirúrgicas', false],
-                  ['convulsiones', 'Convulsiones', false],
-                  ['problemasRespiratorios', 'Problemas respiratorios', false],
-                  ['medicacion', 'Toma medicación con frecuencia', 'medicacionDetalle'],
-                  ['alergico', 'Es alérgico', 'alergicoDetalle'],
-                ].map(([name, label, detalle]) => (
+                {PREGUNTAS_CLINICA.map(([name, label, detalle]) => (
                   <div className="col-12 col-md-6 mb-3" key={name}>
                     <div className="form-check">
                       <input type="checkbox" className="form-check-input"
                         name={name} checked={formData[name]} onChange={handleCheckbox} />
                       <label className="form-check-label">{label}</label>
                     </div>
-                    {detalle && formData[name] && (
-                      <input type="text" className="form-control mt-2" placeholder="Especifique"
+                    {formData[name] && (
+                      <input type="text" className="form-control mt-2" placeholder="Observación (opcional)"
                         name={detalle} value={formData[detalle]} onChange={handleChange} />
                     )}
                   </div>

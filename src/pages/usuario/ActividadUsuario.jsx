@@ -1,23 +1,29 @@
-import { useState, useEffect } from "react"
 import EstadoItem from "../../components/usuario/EstadoItem"
 import CardActividad from "../../components/usuario/CardActividad"
-import { perfilApi } from "../../services/api"
+import { usePerfilCliente } from "../../hooks/usePerfilCliente"
 import '../../styles/perfiles.css'
 
-export default function ActividadUsuario() {
-    const [perfil, setPerfil] = useState(null)
-    const [loading, setLoading] = useState(true)
+const formatFechaCorta = (isoString) => {
+    if (!isoString) return null
+    const f = new Date(isoString)
+    return `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}`
+}
 
-    useEffect(() => {
-        perfilApi.getMe()
-            .then(setPerfil)
-            .catch(console.error)
-            .finally(() => setLoading(false))
-    }, [])
+export default function ActividadUsuario() {
+    const { perfil, loading, error, recargar } = usePerfilCliente()
 
     if (loading) return (
         <div className="text-center py-5">
             <div className="spinner-border text-secondary" role="status" />
+        </div>
+    )
+
+    if (error) return (
+        <div className="text-center py-5">
+            <p className="text-muted mb-3">No se pudieron cargar tus actividades.</p>
+            <button className="btn btn-outline-primary" onClick={() => recargar()}>
+                Reintentar
+            </button>
         </div>
     )
 
@@ -46,7 +52,6 @@ export default function ActividadUsuario() {
             return acc
         }, {})
     )
-    console.log('actividadesAgrupadas:', actividadesAgrupadas)
 
     return (
         <div className="contenido-actividades text-center">
@@ -56,14 +61,7 @@ export default function ActividadUsuario() {
                 <EstadoItem
                     icon={perfil?.tiene_ficha ? "✅" : "❌"}
                     titulo={perfil?.tiene_ficha ? "Ficha médica presentada" : "Falta Ficha Médica"}
-                    /*vencimiento={
-                        perfil?.venc_ficha_medica
-                            ? (() => {
-                                const f = new Date(perfil.venc_ficha_medica)
-                                return `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}`
-                            })()
-                            : null
-                    }*/
+                    vencimiento={formatFechaCorta(perfil?.venc_ficha_medica)}
                 />
             </div>
 

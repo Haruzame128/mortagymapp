@@ -132,9 +132,26 @@ export function useHuellaEnrollment() {
           } else if (s.status === "processing") {
             setStatus("processing");
           } else if (s.status === "done") {
-            setStatus("done");
-            setTemplate(s.templateBase64);
             stopPolling();
+            // Antes de dar por buena la huella, chequear que no sea un dedo
+            // que ese mismo socio ya tenía registrado (dos capturas del mismo
+            // dedo nunca son bytes idénticos, por eso lo valida el agente
+            // contra el lector, no una comparación de texto acá).
+            const dup = await fetch(`${AGENT}/api/enroll/check-duplicate`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dni, templateBase64: s.templateBase64 }),
+            })
+              .then((r) => r.json())
+              .catch(() => ({ isDuplicate: false }));
+
+            if (dup.isDuplicate) {
+              setStatus("duplicado");
+              setError("Esta huella ya está registrada para este socio (dedo repetido).");
+            } else {
+              setStatus("done");
+              setTemplate(s.templateBase64);
+            }
           } else if (s.status === "error") {
             setStatus("error");
             setError(s.step?.error || "Error en el registro");

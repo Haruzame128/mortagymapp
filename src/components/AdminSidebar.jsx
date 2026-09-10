@@ -37,9 +37,19 @@ export default function AdminSidebar({ collapsed, setCollapsed }) {
           <span>Profesores</span>
         </NavLink>
 
+        <NavLink to="/admin/sueldos" className="sidebar-item">
+          <i className="ri-wallet-2-line"></i>
+          <span>Sueldos</span>
+        </NavLink>
+
         <NavLink to="/admin/gastos" className="sidebar-item">
           <i className="ri-money-dollar-circle-line"></i>
           <span>Gastos</span>
+        </NavLink>
+
+        <NavLink to="/admin/matriculas" className="sidebar-item">
+          <i className="ri-file-list-3-line"></i>
+          <span>Matrículas</span>
         </NavLink>
 
         <NavLink to="/admin/disciplinas" className="sidebar-item">
@@ -47,10 +57,25 @@ export default function AdminSidebar({ collapsed, setCollapsed }) {
           <span>Disciplinas</span>
         </NavLink>
 
-        <NavLink to="/admin/servicios" className="sidebar-item">
-          <i className="ri-boxing-line"></i>
-          <span>Servicios</span>
+        <NavLink to="/admin/usuarios" className="sidebar-item">
+          <i className="ri-shield-user-line"></i>
+          <span>Usuarios</span>
         </NavLink>
+
+        <NavLink to="/admin/ficha-config" className="sidebar-item">
+          <i className="ri-file-settings-line"></i>
+          <span>Ficha de inscripción</span>
+        </NavLink>
+
+        <button
+          type="button"
+          className="sidebar-item"
+          style={{ background: "none", border: "none", width: "100%", textAlign: "left", cursor: "pointer" }}
+          onClick={() => window.open("/kiosko/ingreso", "_blank", "noopener,noreferrer")}
+        >
+          <i className="ri-fingerprint-line"></i>
+          <span>Pantalla de ingreso</span>
+        </button>
       </nav>
     </div>
   );

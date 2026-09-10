@@ -1,98 +1,41 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import { clientesApi, disciplinasApi, revisionesApi } from "../../services/api";
 import TablaPerfil from "../../components/TablaPerfil";
-
-/* ===== MOCK ===== */
-
-const alumnos = [
-  {
-    id: 1,
-    nombre: "Juan Pérez",
-    dni: "34567890",
-    disciplinas: "Musculación, Natación",
-    cuota: true,
-    ficha: true,
-    matricula: true,
-  },
-  {
-    id: 2,
-    nombre: "María López",
-    dni: "30123456",
-    disciplinas: "Funcional",
-    cuota: false,
-    ficha: true,
-    matricula: false,
-  },
-  {
-    id: 3,
-    nombre: "Martin Diaz",
-    dni: "28995412",
-    disciplinas: "Pilates",
-    cuota: false,
-    ficha: true,
-    matricula: false,
-  },
-  {
-    id: 4,
-    nombre: "Laura Rodriguez",
-    dni: "45002156",
-    disciplinas: "Natación",
-    cuota: false,
-    ficha: true,
-    matricula: true,
-  },
-  {
-    id: 5,
-    nombre: "Juan Carlos Chacón",
-    dni: "35002465",
-    disciplinas: "Funcional, Judo",
-    cuota: false,
-    ficha: true,
-    matricula: false,
-  },
-  {
-    id: 6,
-    nombre: "Manuel Muñoz",
-    dni: "44895777",
-    disciplinas: "Natación",
-    cuota: false,
-    ficha: true,
-    matricula: false,
-  },
-  {
-    id: 7,
-    nombre: "Antonio Suarez",
-    dni: "20554698",
-    disciplinas: "Pilates, Judo",
-    cuota: false,
-    ficha: true,
-    matricula: false,
-  },
-];
-
-const cuposPorDisciplina = {
-  Musculación: 30,
-  Natación: 20,
-  Funcional: 15,
-  Pilates: 12,
-  Judo: 10,
-};
-
-const columnas = [
-  { key: "nombre", label: "Nombre", ordenable: true },
-  { key: "dni", label: "DNI", ordenable: true },
-  { key: "disciplinas", label: "Disciplina", ordenable: false },
-  { key: "cuota", label: "Cuota al día", ordenable: true },
-  { key: "ficha", label: "Ficha médica", ordenable: false },
-];
+import { abrirDialogoAptoMedico, badgeAptoMedico } from "../../utils/aptoMedico";
 
 export default function Usuarios() {
   const navigate = useNavigate();
 
-  const [datos, setDatos] = useState(alumnos);
+  const [disciplinas, setDisciplinas] = useState([]);
+  const [pendientesRevision, setPendientesRevision] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [datos, setDatos] = useState([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [busqueda, setBusqueda] = useState("");
   const [disciplina, setDisciplina] = useState("");
+
+  const cargar = async () => {
+    try {
+      setLoading(true);
+      const [dataAlumnos, dataDisciplinas, dataRevisionesPendientes] = await Promise.all([
+        clientesApi.getAll(),
+        disciplinasApi.getAll(),
+        // Solo aplica a Natación; si falla no debe romper el listado de alumnos.
+        revisionesApi.getAll({ pendientes: true }).catch(() => []),
+      ]);
+      setDatos(dataAlumnos);
+      setDisciplinas(dataDisciplinas);
+      setPendientesRevision(new Set(dataRevisionesPendientes.map((r) => String(r.id_cliente))));
+    } catch (err) {
+      Swal.fire("Error", err.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { cargar(); }, []);
 
   const manejarOrdenar = (key) => {
     setDatos([...datos].sort((a, b) => (a[key] > b[key] ? 1 : -1)));
@@ -100,27 +43,89 @@ export default function Usuarios() {
 
   useEffect(() => setPaginaActual(1), [busqueda, disciplina]);
 
-  const disciplinasDisponibles = [
-    ...new Set(
-      alumnos.flatMap(a => a.disciplinas.split(",").map(d => d.trim()))
-    ),
-  ];
-
   const filtrados = datos.filter(a =>
-    (a.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      a.dni.includes(busqueda)) &&
-    (!disciplina ||
-      a.disciplinas.toLowerCase().includes(disciplina.toLowerCase()))
+    (a.nomap_c?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      String(a.dni_u).includes(busqueda)) &&
+    (!disciplina || a.disciplinas?.includes(disciplina))
   );
 
-  const inscriptos = alumnos.filter(a =>
-    disciplina
-      ? a.disciplinas.toLowerCase().includes(disciplina.toLowerCase())
-      : false
-  );
-
-  const cupoMaximo = cuposPorDisciplina[disciplina] || 0;
-  const cupoDisponible = cupoMaximo - inscriptos.length;
+  const columnas = [
+    {
+      key: "nomap_c",
+      label: "Nombre",
+      ordenable: true,
+      render: (a) => (
+        <>
+          {a.nomap_c}
+          {pendientesRevision.has(String(a.id_cliente)) && (
+            <sup className="text-danger ms-1" title="Falta la revisación médica mensual de Natación">
+              *
+            </sup>
+          )}
+        </>
+      ),
+    },
+    { key: "dni_u", label: "DNI", ordenable: true },
+    { key: "disciplinas", label: "Disciplina", ordenable: false },
+    {
+      key: "cuota_al_dia",
+      label: "Cuota al día",
+      ordenable: true,
+      render: (a) => (
+        <span className={`badge ${a.cuota_al_dia ? "bg-success" : "bg-danger"}`}>
+          {a.cuota_al_dia ? "Sí" : "No"}
+        </span>
+      ),
+    },
+    {
+      key: "estado_ficha_medica",
+      label: "Apto médico",
+      ordenable: false,
+      render: (a) => (
+        <button
+          className={`btn btn-xs badge border-0 cursor-pointer ${badgeAptoMedico(a.estado_ficha_medica).clase}`}
+          onClick={() => abrirDialogoAptoMedico(
+            { nombre: a.nomap_c, fecha_entrega_ficha_medica: a.fecha_entrega_ficha_medica },
+            (fecha) => clientesApi.setAptoMedico(a.id_cliente, fecha),
+            cargar
+          )}
+          title="Click para registrar la entrega del certificado médico"
+        >
+          {badgeAptoMedico(a.estado_ficha_medica).texto}
+        </button>
+      ),
+    },
+    {
+      key: "opciones",
+      label: "Opciones",
+      ordenable: false,
+      render: (a) => (
+        <div className="d-flex gap-1 justify-content-center">
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            title="Ver detalle"
+            onClick={() => navigate(`/recepcion/usuarios/${a.id_cliente}`)}
+          >
+            <i className="ri-eye-fill"></i>
+          </button>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            title="Editar / agregar disciplina"
+            onClick={() => navigate(`/recepcion/usuarios/nuevo?id=${a.id_cliente}`)}
+          >
+            <i className="ri-pencil-fill"></i>
+          </button>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            title="Renovar suscripción"
+            onClick={() => navigate(`/recepcion/renovacion?id=${a.id_cliente}`)}
+          >
+            <i className="ri-refresh-line"></i>
+          </button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -128,15 +133,6 @@ export default function Usuarios() {
       <div className="d-flex justify-content-end gap-2 mb-4">
         <button className="btn btn-perfil" onClick={() => navigate("/recepcion/inscripcion")}>
           <i className="ri-profile-line me-1" /> Inscripción
-        </button>
-
-        <button className="btn btn-perfil" onClick={() => navigate("/recepcion/renovacion")}>
-          <i className="ri-loop-right-line me-1" /> Renovación
-        </button>
-
-        <button className="btn btn-perfil" onClick={() => navigate("/recepcion/molinete")}>
-          <i class="ri-lock-unlock-line"></i>
-          Molinete
         </button>
       </div>
 
@@ -158,34 +154,32 @@ export default function Usuarios() {
             onChange={e => setDisciplina(e.target.value)}
           >
             <option value="">Todas</option>
-            {disciplinasDisponibles.map(d => (
-              <option key={d}>{d}</option>
+            {disciplinas.map(d => (
+              <option key={d.id_disciplina} value={d.nombre_d}>{d.nombre_d}</option>
             ))}
           </select>
         </div>
       </div>
 
-      {disciplina && (
-        <div className="alert info-cupo d-flex justify-content-between align-items-center">
-          <span>
-            <strong>{disciplina}</strong> —
-            {inscriptos.length} inscriptos
-          </span>
-
-          <span>
-            Cupo: {inscriptos.length}/{cupoMaximo} (
-            {cupoDisponible > 0 ? `${cupoDisponible} disponibles` : "Completo"})
-          </span>
+      {loading ? (
+        <div className="text-center py-5">
+          <div className="spinner-border text-secondary" role="status" />
         </div>
+      ) : (
+        <TablaPerfil
+          columnas={columnas}
+          datos={filtrados.map(a => ({ ...a, id: a.id_cliente }))}
+          paginaActual={paginaActual}
+          setPaginaActual={setPaginaActual}
+          onOrdenar={manejarOrdenar}
+        />
       )}
 
-      <TablaPerfil
-        columnas={columnas}
-        datos={filtrados}
-        paginaActual={paginaActual}
-        setPaginaActual={setPaginaActual}
-        onOrdenar={manejarOrdenar}
-      />
+      {pendientesRevision.size > 0 && (
+        <small className="text-muted d-block mt-2">
+          * Falta la revisación médica mensual de Natación
+        </small>
+      )}
     </>
   );
 }

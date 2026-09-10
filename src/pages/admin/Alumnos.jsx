@@ -1,34 +1,47 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import Modal from "react-modal";
-import { clientesApi } from "../../services/api";
+import { clientesApi, disciplinasApi, revisionesApi } from "../../services/api";
+import PaginacionTabla from "../../components/PaginacionTabla";
+import { abrirDialogoAptoMedico, badgeAptoMedico } from "../../utils/aptoMedico";
 import "../../styles/Admin.css";
 import { useHuellaEnrollment } from '../../hooks/useHuellaEnrollment'
 import HuellaModal from '../../components/HuellaModal'
-
-Modal.setAppElement("#root");
 
 export default function Alumnos() {
   const navigate = useNavigate();
 
   const [alumnos, setAlumnos] = useState([]);
+  const [disciplinas, setDisciplinas] = useState([]);
+  const [pendientesRevision, setPendientesRevision] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [paginaActual, setPaginaActual] = useState(1);
+  const [filasPorPagina, setFilasPorPagina] = useState(10);
   const [busqueda, setBusqueda] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
-  const [loadingDetalle, setLoadingDetalle] = useState(false);
-  const [clienteHuella, setClienteHuella] = useState(null) // cliente al que se le registra
+  const [clienteHuella, setClienteHuella] = useState(null)
   const [modalHuella, setModalHuella] = useState(false)
+  const [filtros, setFiltros] = useState({
+    disciplina: '',
+    aptomedico: '',
+    cuota: '',
+    huella: '',
+    activo: ''
+  })
   const enroll = useHuellaEnrollment()
 
-  // ── Cargar alumnos ──────────────────────────────────────────────
+  // ── Cargar alumnos y disciplinas ─────────────────────────────────
   const cargarAlumnos = async () => {
     try {
       setLoading(true);
-      const data = await clientesApi.getAll();
-      setAlumnos(data);
+      const [dataAlumnos, dataDisciplinas, dataRevisionesPendientes] = await Promise.all([
+        clientesApi.getAll(),
+        disciplinasApi.getAll(),
+        // Solo aplica a Natación; si falla no debe romper el listado de alumnos.
+        revisionesApi.getAll({ pendientes: true }).catch(() => []),
+      ]);
+      setAlumnos(dataAlumnos);
+      setDisciplinas(dataDisciplinas);
+      setPendientesRevision(new Set(dataRevisionesPendientes.map((r) => String(r.id_cliente))));
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     } finally {
@@ -39,11 +52,12 @@ export default function Alumnos() {
   // Cuando termina el enrollment, guardar en DB
   useEffect(() => {
     if (enroll.status === 'done' && enroll.template && clienteHuella) {
-      clientesApi.update(clienteHuella.id_cliente, { huella: enroll.template })
+      clientesApi.addHuella(clienteHuella.id_cliente, enroll.template)
         .then(() => {
           Swal.fire('¡Listo!', 'Huella registrada correctamente', 'success')
           setModalHuella(false)
           setClienteHuella(null)
+          cargarAlumnos()
         })
         .catch(err => Swal.fire('Error', err.message, 'error'))
     }
@@ -52,20 +66,6 @@ export default function Alumnos() {
 
   useEffect(() => { cargarAlumnos(); }, []);
 
-  // ── Abrir modal con detalle completo ────────────────────────────
-  const abrirDetalle = async (a) => {
-    setAlumnoSeleccionado(a);
-    setIsModalOpen(true);
-    setLoadingDetalle(true);
-    try {
-      const detalle = await clientesApi.getById(a.id_cliente);
-      setAlumnoSeleccionado(detalle);
-    } catch (err) {
-      Swal.fire("Error", err.message, "error");
-    } finally {
-      setLoadingDetalle(false);
-    }
-  };
 
   // ── Eliminar alumno ─────────────────────────────────────────────
   const handleToggleActivo = (a) => {
@@ -97,17 +97,34 @@ export default function Alumnos() {
     })
   }
 
-  // ── Filtro por búsqueda ─────────────────────────────────────────
-  const alumnosFiltrados = alumnos.filter(a =>
-    a.nomap_c?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    String(a.dni_u).includes(busqueda)
-  );
+  // ── Filtros ─────────────────────────────────────────────────────
+  const alumnosFiltrados = alumnos.filter(a => {
+    const cumpleBusqueda = a.nomap_c?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      String(a.dni_u).includes(busqueda);
+
+    const cumpleDisciplina = !filtros.disciplina ||
+      (a.disciplinas && a.disciplinas.includes(filtros.disciplina));
+
+    const cumpleFicha = !filtros.aptomedico || a.estado_ficha_medica === filtros.aptomedico;
+
+    const cumpleCuota = !filtros.cuota ||
+      (filtros.cuota === 'si' && a.cuota_al_dia) ||
+      (filtros.cuota === 'no' && !a.cuota_al_dia);
+
+    const cumpleHuella = !filtros.huella ||
+      (filtros.huella === 'si' && a.cantidad_huellas > 0) ||
+      (filtros.huella === 'no' && !(a.cantidad_huellas > 0));
+
+    const cumpleActivo = !filtros.activo ||
+      (filtros.activo === 'activos' && a.activo_c) ||
+      (filtros.activo === 'inactivos' && !a.activo_c);
+
+    return cumpleBusqueda && cumpleDisciplina && cumpleFicha && cumpleCuota && cumpleHuella && cumpleActivo;
+  });
 
   // ── Paginación ──────────────────────────────────────────────────
-  const filasPorPagina = 5; // <--- cambiar aqui la cantidad de filas por página
   const inicio = (paginaActual - 1) * filasPorPagina;
   const alumnosPagina = alumnosFiltrados.slice(inicio, inicio + filasPorPagina);
-  const totalPaginas = Math.ceil(alumnosFiltrados.length / filasPorPagina);
 
   // Handler para abrir el modal
   const handleRegistrarHuella = async (a) => {
@@ -128,9 +145,33 @@ export default function Alumnos() {
   }
 
   const handleCerrarHuella = () => {
-    if (enroll.status !== 'done') enroll.cancel()
+    if (!['done', 'duplicado'].includes(enroll.status)) enroll.cancel()
     setModalHuella(false)
     setClienteHuella(null)
+  }
+
+  const handleRegistrarAptoMedico = (a) => abrirDialogoAptoMedico(
+    { nombre: a.nomap_c, fecha_entrega_ficha_medica: a.fecha_entrega_ficha_medica },
+    (fecha) => clientesApi.setAptoMedico(a.id_cliente, fecha),
+    cargarAlumnos
+  )
+
+  const handleFiltroChange = (e) => {
+    const { name, value } = e.target;
+    setFiltros({ ...filtros, [name]: value });
+    setPaginaActual(1);
+  }
+
+  const handleLimpiarFiltros = () => {
+    setFiltros({
+      disciplina: '',
+      aptomedico: '',
+      cuota: '',
+      huella: '',
+      activo: ''
+    });
+    setBusqueda('');
+    setPaginaActual(1);
   }
 
   // ── Render ──────────────────────────────────────────────────────
@@ -144,15 +185,100 @@ export default function Alumnos() {
         </button>
       </div>
 
-      {/* BUSCADOR */}
-      <div className="mb-3">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Buscar por nombre o DNI..."
-          value={busqueda}
-          onChange={e => { setBusqueda(e.target.value); setPaginaActual(1); }}
-        />
+      {/* BUSCADOR Y FILTROS */}
+      <div className="card admin-card mb-4">
+        <div className="card-body">
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Buscar por nombre o DNI..."
+              value={busqueda}
+              onChange={e => { setBusqueda(e.target.value); setPaginaActual(1); }}
+            />
+          </div>
+
+          <div className="row g-2">
+            <div className="col-md-2">
+              <label className="form-label">Disciplina</label>
+              <select
+                className="form-control form-control-sm"
+                name="disciplina"
+                value={filtros.disciplina}
+                onChange={handleFiltroChange}
+              >
+                <option value="">-- Todas --</option>
+                {disciplinas.map(d => (
+                  <option key={d.id_disciplina} value={d.nombre_d}>
+                    {d.nombre_d}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-2">
+              <label className="form-label">Apto médico</label>
+              <select
+                className="form-control form-control-sm"
+                name="aptomedico"
+                value={filtros.aptomedico}
+                onChange={handleFiltroChange}
+              >
+                <option value="">-- Todos --</option>
+                <option value="vigente">Vigente</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="vencido">Vencido</option>
+              </select>
+            </div>
+            <div className="col-md-2">
+              <label className="form-label">Cuota</label>
+              <select
+                className="form-control form-control-sm"
+                name="cuota"
+                value={filtros.cuota}
+                onChange={handleFiltroChange}
+              >
+                <option value="">-- Todos --</option>
+                <option value="si">Al día</option>
+                <option value="no">Adeuda</option>
+              </select>
+            </div>
+            <div className="col-md-1">
+              <label className="form-label">Huella</label>
+              <select
+                className="form-control form-control-sm"
+                name="huella"
+                value={filtros.huella}
+                onChange={handleFiltroChange}
+              >
+                <option value="">-- Todos --</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div className="col-md-1">
+              <label className="form-label">Estado</label>
+              <select
+                className="form-control form-control-sm"
+                name="activo"
+                value={filtros.activo}
+                onChange={handleFiltroChange}
+              >
+                <option value="">-- Todos --</option>
+                <option value="activos">Activos</option>
+                <option value="inactivos">Inactivos</option>
+              </select>
+            </div>
+            <div className="col-md-1 d-flex align-items-end">
+              <button
+                className="btn btn-sm btn-outline-secondary w-100"
+                onClick={handleLimpiarFiltros}
+                title="Limpiar todos los filtros"
+              >
+                <i className="ri-refresh-line"></i>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* TABLA */}
@@ -169,21 +295,36 @@ export default function Alumnos() {
                 <th>DNI</th>
                 <th>Disciplinas</th>
                 <th>Cuota al día</th>
-                <th>Ficha médica</th>
+                <th>Apto médico</th>
+                <th>Huella</th>
+                <th>PIN</th>
                 <th className="text-center">Opciones</th>
               </tr>
             </thead>
             <tbody>
               {alumnosPagina.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center text-muted py-4">
+                  <td colSpan="8" className="text-center text-muted py-4">
                     No se encontraron alumnos
                   </td>
                 </tr>
               ) : (
                 alumnosPagina.map((a) => (
                   <tr key={a.id_cliente} className={!a.activo_c ? 'table-secondary text-muted' : ''}>
-                    <td>{a.nomap_c}</td>
+                    <td>
+                      {a.nomap_c}
+                      {pendientesRevision.has(String(a.id_cliente)) && (
+                        <sup className="text-danger ms-1" title="Falta la revisación médica mensual de Natación">
+                          *
+                        </sup>
+                      )}
+                      {!a.activo_c && a.fecha_baja && (
+                        <small className="d-block text-muted">
+                          Baja {a.tipo_baja === "automatica" ? "automática" : "manual"} el{" "}
+                          {new Date(a.fecha_baja).toLocaleDateString("es-AR")}
+                        </small>
+                      )}
+                    </td>
                     <td>{a.dni_u}</td>
                     <td>
                       {a.disciplinas
@@ -196,14 +337,28 @@ export default function Alumnos() {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge ${a.tiene_ficha ? "bg-success" : "bg-warning text-dark"}`}>
-                        {a.tiene_ficha ? "Sí" : "Pendiente"}
+                      <button
+                        className={`btn btn-xs badge border-0 cursor-pointer ${badgeAptoMedico(a.estado_ficha_medica).clase}`}
+                        onClick={() => handleRegistrarAptoMedico(a)}
+                        title="Click para registrar la entrega del certificado médico"
+                      >
+                        {badgeAptoMedico(a.estado_ficha_medica).texto}
+                      </button>
+                    </td>
+                    <td>
+                      <span className={`badge ${a.cantidad_huellas > 0 ? "bg-info" : "bg-secondary"}`}>
+                        {a.cantidad_huellas > 0 ? a.cantidad_huellas : "No"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${a.pin_acceso_c ? "bg-info" : "bg-secondary"}`}>
+                        {a.pin_acceso_c ? "Sí" : "No"}
                       </span>
                     </td>
                     <td className="text-center">
                       <button className="btn btn-sm btn-outline-secondary me-1"
                         title="Ver detalle"
-                        onClick={() => abrirDetalle(a)}>
+                        onClick={() => navigate(`/admin/alumnos/${a.id_cliente}`)}>
                         <i className="ri-eye-fill"></i>
                       </button>
                       <button className="btn btn-sm btn-outline-secondary me-1"
@@ -212,9 +367,9 @@ export default function Alumnos() {
                         <i className="ri-pencil-fill"></i>
                       </button>
                       <button className="btn btn-sm btn-outline-secondary me-1"
-                        title={a.huella_c ? 'Actualizar huella' : 'Registrar huella'}
+                        title={a.cantidad_huellas > 0 ? 'Agregar otra huella' : 'Registrar huella'}
                         onClick={() => handleRegistrarHuella(a)}>
-                        <i className={a.huella_c ? 'ri-fingerprint-fill' : 'ri-fingerprint-line'}></i>
+                        <i className={a.cantidad_huellas > 0 ? 'ri-fingerprint-fill' : 'ri-fingerprint-line'}></i>
                       </button>
                       <button
                         className={`btn btn-sm ${a.activo_c ? 'btn-outline-danger' : 'btn-outline-success'}`}
@@ -231,132 +386,20 @@ export default function Alumnos() {
         </div>
       )}
 
-      {/* PAGINACIÓN */}
-      {totalPaginas > 1 && (
-        <nav className="d-flex justify-content-center">
-          <ul className="pagination">
-            {Array.from({ length: totalPaginas }).map((_, i) => (
-              <li key={i} className={`nav-item ${paginaActual === i + 1 ? "navlink-active" : ""}`}>
-                <button className="nav-link" onClick={() => setPaginaActual(i + 1)}>
-                  {i + 1}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      {pendientesRevision.size > 0 && (
+        <small className="text-muted d-block mb-3">
+          * Falta la revisación médica mensual de Natación
+        </small>
       )}
 
-      {/* MODAL DETALLE */}
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => { setIsModalOpen(false); setAlumnoSeleccionado(null); }}
-        contentLabel="Detalle del alumno"
-        className="modal-react"
-        overlayClassName="modal-overlay"
-      >
-        <div className="modal-header">
-          <h5 className="modal-title">Información del alumno</h5>
-          <button type="button" className="close" onClick={() => setIsModalOpen(false)}>
-            <span>&times;</span>
-          </button>
-        </div>
+      <PaginacionTabla
+        paginaActual={paginaActual}
+        setPaginaActual={setPaginaActual}
+        filasPorPagina={filasPorPagina}
+        setFilasPorPagina={setFilasPorPagina}
+        totalItems={alumnosFiltrados.length}
+      />
 
-        <div className="modal-body">
-          {loadingDetalle ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-secondary" role="status" />
-            </div>
-          ) : alumnoSeleccionado && (
-            <>
-              <ul className="list-group list-group-flush mb-3">
-                <li className="list-group-item">
-                  <strong>Nombre:</strong> {alumnoSeleccionado.nomap_c}
-                </li>
-                <li className="list-group-item">
-                  <strong>DNI:</strong> {alumnoSeleccionado.dni_u}
-                </li>
-                {alumnoSeleccionado.direccion_c && (
-                  <li className="list-group-item">
-                    <strong>Dirección:</strong> {alumnoSeleccionado.direccion_c}
-                  </li>
-                )}
-                {alumnoSeleccionado.telefono_c && (
-                  <li className="list-group-item">
-                    <strong>Teléfono:</strong> {alumnoSeleccionado.telefono_c}
-                  </li>
-                )}
-                {alumnoSeleccionado.fecha_nac_c && (
-                  <li className="list-group-item">
-                    <strong>Fecha de nacimiento:</strong>{" "}
-                    {new Date(alumnoSeleccionado.fecha_nac_c).toLocaleDateString('es-AR')}
-                  </li>
-                )}
-                <li className="list-group-item">
-                  <strong>Ficha médica:</strong>{" "}
-                  {alumnoSeleccionado.tiene_ficha ? "Cargada" : "Pendiente"}
-                </li>
-                {alumnoSeleccionado.venc_ficha_medica && (
-                  <li className="list-group-item">
-                    <strong>Venc. ficha médica:</strong>{" "}
-                    {new Date(alumnoSeleccionado.venc_ficha_medica).toLocaleDateString('es-AR')}
-                  </li>
-                )}
-              </ul>
-
-              {/* Inscripciones */}
-              {alumnoSeleccionado.inscripciones?.length > 0 && (
-                <>
-                  <h6 className="fw-semibold mb-2">Inscripciones</h6>
-                  <div className="table-responsive">
-                    <table className="table table-sm table-bordered align-middle mb-0">
-                      <thead className="table-light">
-                        <tr>
-                          <th>Disciplina</th>
-                          <th>Actividad</th>
-                          <th>Horario</th>
-                          <th>Días/sem</th>
-                          <th>Entradas</th>
-                          <th>Cuota</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {alumnoSeleccionado.inscripciones.map((i) => (
-                          <tr key={i.id_inscripto}>
-                            <td>{i.nombre_d}</td>
-                            <td>{i.nombre_a}</td>
-                            <td>
-                              {i.dia_h && i.hora_h
-                                ? `${i.dia_h} ${i.hora_h.slice(0, 5)}`
-                                : <span className="text-muted">—</span>}
-                            </td>
-                            <td>{i.cantidad_dias ?? '—'}</td>
-                            <td>
-                              {i.entradas_restantes != null
-                                ? `${i.entradas_restantes}/${i.entradas_totales}`
-                                : '—'}
-                            </td>
-                            <td>
-                              <span className={`badge ${i.pago_s ? "bg-success" : "bg-danger"}`}>
-                                {i.pago_s ? "Sí" : "No"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
-            Cerrar
-          </button>
-        </div>
-      </Modal>
       <HuellaModal
         isOpen={modalHuella}
         status={enroll.status}

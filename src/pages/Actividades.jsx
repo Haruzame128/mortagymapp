@@ -109,6 +109,7 @@ export default function Actividades() {
           actividades={d.actividades}
           modalData={transformarModalData(actividadesConPrecios(d.actividades))}
           reverse={index % 2 !== 0}
+          matricula={d.requiere_matricula ? "Matrícula (50% de la cuota mensual) se abona una vez al año" : ""}
         />
       ))}
     </div>

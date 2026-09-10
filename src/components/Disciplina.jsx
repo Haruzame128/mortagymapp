@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useNavigate } from "react-router-dom";
 import Modal from 'react-modal';
 import TablaNatacion from './TablaNatacion';
+import { tieneConProfesor } from '../utils/preciosDisciplina';
 import '../styles/Actividades.css';
 
 
@@ -31,6 +32,10 @@ export default function Disciplina({
 
   const precioSeleccionado = precios[dias];
   const tieneUnaSolaOpcion = opcionesDias.length === 1;
+  // Solo las disciplinas con recargo "con profesor" configurado (hoy solo
+  // Natación) usan la tabla de 3 columnas — no está hardcodeado a esa
+  // disciplina puntual, cualquier otra que cargue ese precio la usaría igual.
+  const usaModalidadProfesor = actividades.some((a) => tieneConProfesor(a));
 
   return (
     <>
@@ -48,7 +53,7 @@ export default function Disciplina({
                 <p>{subactividad}</p>
               </div>
 
-              {titulo === "Natación" ? (
+              {usaModalidadProfesor ? (
                 <TablaNatacion actividades={actividades} matricula={matricula} />
               ) : (
                 <div className="precios">
@@ -94,6 +99,13 @@ export default function Disciplina({
                       </tr>
                     </tbody>
                     <tfoot>
+                      {matricula && (
+                        <tr>
+                          <td colSpan="3">
+                            <p className="matricula text-muted">{matricula}</p>
+                          </td>
+                        </tr>
+                      )}
                       <tr>
                         <td colSpan="3">
                           <p className="text-muted">Con tarjeta de crédito: +25%</p>

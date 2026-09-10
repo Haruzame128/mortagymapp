@@ -16,8 +16,6 @@ export function AuthProvider({ children }) {
     // Puede lanzar error — el componente que llama lo captura con try/catch
     const data = await authApi.login(dni, contrasena)
 
-     console.log('Respuesta del backend:', data) // temporal para debug
-
     sessionStorage.setItem('token', data.token)
     sessionStorage.setItem('user',  JSON.stringify(data.user))
     setToken(data.token)
@@ -25,11 +23,14 @@ export function AuthProvider({ children }) {
 
     // Redirigir según rol
     switch (data.user.rol) {
-      case 'Administrador': navigate('/admin');     break
-      case 'Profesor':      navigate('/profesor');  break
-      case 'Recepcion':     navigate('/recepcion'); break
-      case 'Cliente':       navigate('/perfil');    break
-      default:              navigate('/')
+      case 'Administrador':  navigate('/admin');        break
+      case 'Profesor':       navigate('/profesor');     break
+      case 'Recepcion':      navigate('/recepcion');    break
+      case 'Cliente':        navigate('/perfil');       break
+      case 'Medico':         navigate('/medico');       break
+      case 'Editor':         navigate('/editor');       break
+      case 'Nutricionista':  navigate('/nutricion');    break
+      default:               navigate('/')
     }
   }
 
@@ -46,9 +47,12 @@ export function AuthProvider({ children }) {
   const isProfesor  = user?.rol === 'Profesor'
   const isRecepcion = user?.rol === 'Recepcion'
   const isCliente   = user?.rol === 'Cliente'
+  const isMedico    = user?.rol === 'Medico'
+  const isEditor    = user?.rol === 'Editor'
+  const isNutricionista = user?.rol === 'Nutricionista'
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, isProfesor, isRecepcion, isCliente }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, isProfesor, isRecepcion, isCliente, isMedico, isEditor, isNutricionista }}>
       {children}
     </AuthContext.Provider>
   )

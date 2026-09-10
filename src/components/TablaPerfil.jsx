@@ -1,14 +1,21 @@
+import { useState } from "react";
+import PaginacionTabla from "./PaginacionTabla";
+
 export default function TablaPerfil({
   columnas,
   datos,
   paginaActual,
   setPaginaActual,
-  filasPorPagina = 5,
+  filasPorPagina: filasPorPaginaProp,
+  setFilasPorPagina: setFilasPorPaginaProp,
   onOrdenar,
 }) {
+  const [filasInternas, setFilasInternas] = useState(10);
+  const filasPorPagina = filasPorPaginaProp ?? filasInternas;
+  const setFilasPorPagina = setFilasPorPaginaProp ?? setFilasInternas;
+
   const inicio = (paginaActual - 1) * filasPorPagina;
   const datosPagina = datos.slice(inicio, inicio + filasPorPagina);
-  const totalPaginas = Math.ceil(datos.length / filasPorPagina);
 
   const renderValor = (valor) => {
     if (typeof valor === "boolean") {
@@ -63,27 +70,13 @@ export default function TablaPerfil({
         </table>
       </div>
 
-      {/* PAGINACIÓN */}
-      {totalPaginas > 1 && (
-        <nav className="d-flex justify-content-center">
-          <ul className="pagination">
-            {Array.from({ length: totalPaginas }).map((_, i) => (
-              <li
-                key={i}
-                className={`nav-item ${paginaActual === i + 1 ? "navlink-active" : ""
-                  }`}
-              >
-                <button
-                  className="nav-link"
-                  onClick={() => setPaginaActual(i + 1)}
-                >
-                  {i + 1}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      <PaginacionTabla
+        paginaActual={paginaActual}
+        setPaginaActual={setPaginaActual}
+        filasPorPagina={filasPorPagina}
+        setFilasPorPagina={setFilasPorPagina}
+        totalItems={datos.length}
+      />
     </>
   );
 }

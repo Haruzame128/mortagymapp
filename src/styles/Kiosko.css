@@ -1,0 +1,91 @@
+.kiosko-pantalla {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  color: white;
+  background: linear-gradient(135deg, #0093D8 0%, #A54E9E 100%);
+  transition: background 0.35s ease;
+  font-family: var(--font-text, 'Hind Madurai', sans-serif);
+}
+
+.kiosko-pantalla.kiosko-ok {
+  background: linear-gradient(135deg, #0ea968 0%, #0c7a4d 100%);
+}
+
+.kiosko-pantalla.kiosko-error {
+  background: linear-gradient(135deg, #e0473c 0%, #a5192e 100%);
+}
+
+.kiosko-logo-badge {
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+}
+
+.kiosko-logo-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.kiosko-icono {
+  font-size: 6rem;
+  line-height: 1;
+  margin-bottom: 1.25rem;
+  opacity: 0.95;
+}
+
+.kiosko-icono.pulso {
+  animation: kiosko-pulso 1.8s ease-in-out infinite;
+}
+
+@keyframes kiosko-pulso {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50%      { transform: scale(1.08); opacity: 1; }
+}
+
+.kiosko-pantalla h1 {
+  font-family: var(--font-titulo, 'Tondu', sans-serif);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kiosko-sub {
+  font-size: 1.5rem;
+  opacity: 0.95;
+  max-width: 700px;
+}
+
+.kiosko-detalle {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-top: 0.75rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 0.5rem 1.5rem;
+}
+
+.kiosko-aviso {
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+}

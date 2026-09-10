@@ -6,6 +6,18 @@ import { BsBoxArrowInRight, BsSpeedometer2, BsBoxArrowRight } from "react-icons/
 import { useAuth } from '../context/AuthContext'
 import '../styles/Header.css'
 
+// A dónde vuelve cada rol y cómo se llama el botón — así ningún rol nuevo
+// se queda sin botón de "volver a mis funciones" por caer en un else vacío.
+const HOME_POR_ROL = {
+  Administrador: { to: '/admin', label: 'Panel de Control' },
+  Cliente: { to: '/perfil', label: 'Mi Perfil' },
+  Profesor: { to: '/profesor/perfil', label: 'Mi Perfil' },
+  Recepcion: { to: '/recepcion', label: 'Volver a mis funciones' },
+  Medico: { to: '/medico', label: 'Volver a mis funciones' },
+  Editor: { to: '/editor', label: 'Volver a mis funciones' },
+  Nutricionista: { to: '/nutricion', label: 'Volver a mis funciones' },
+}
+
 export default function Navbar({ tipoBanner = "normal" }) {
 
   const [menuAbierto, setMenuAbierto] = useState(false);
@@ -50,60 +62,22 @@ export default function Navbar({ tipoBanner = "normal" }) {
                     <BsBoxArrowInRight className="me-2" /> Ingresar
                   </NavLink>
                 </li>
-              ) : user.rol === 'Administrador' ? (
-                // Admin → Panel de Control + Salir
-                <>
-                  <li className="nav-item">
-                    <NavLink className="nav-link nav-btn px-4" to="/admin" onClick={cerrarMenu}>
-                      <BsSpeedometer2 className="me-2" /> Panel de Control
-                    </NavLink>
-                  </li>
-                  <li className="nav-item ms-2">
-                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
-                      <BsBoxArrowRight className="me-2" /> Salir
-                    </button>
-                  </li>
-                </>
-              ) : user.rol === 'Cliente' ? (
-                // Cliente → Mi Perfil + Salir
-                <>
-                  <li className="nav-item">
-                    <NavLink className="nav-link nav-btn px-4" to="/perfil" onClick={cerrarMenu}>
-                      <BsSpeedometer2 className="me-2" /> Mi Perfil
-                    </NavLink>
-                  </li>
-                  <li className="nav-item ms-2">
-                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
-                      <BsBoxArrowRight className="me-2" /> Salir
-                    </button>
-                  </li>
-                </>
-              ) : user.rol === 'Profesor' ? (
-                // Profesor → Mis Alumnos + Mi Perfil + Salir
-                <>
-                 {/*  <li className="nav-item">
-                    <NavLink className="nav-link nav-btn px-4" to="/profesor/alumnos-profesor" onClick={cerrarMenu}>
-                      <i className="ri-group-line me-2"></i> Mis Alumnos
-                    </NavLink>
-                  </li> */}
-                  <li className="nav-item ms-2">
-                    <NavLink className="nav-link nav-btn px-4" to="/profesor/perfil" onClick={cerrarMenu}>
-                      <BsSpeedometer2 className="me-2" /> Mi Perfil
-                    </NavLink>
-                  </li>
-                  <li className="nav-item ms-2">
-                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
-                      <BsBoxArrowRight className="me-2" /> Salir
-                    </button>
-                  </li>
-                </>
               ) : (
-                // Recepción → Salir
-                <li className="nav-item ms-2">
-                  <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
-                    <BsBoxArrowRight className="me-2" /> Salir
-                  </button>
-                </li>
+                // Logueado → volver a sus funciones (según rol) + Salir
+                <>
+                  {HOME_POR_ROL[user.rol] && (
+                    <li className="nav-item ms-2">
+                      <NavLink className="nav-link nav-btn px-4" to={HOME_POR_ROL[user.rol].to} onClick={cerrarMenu}>
+                        <BsSpeedometer2 className="me-2" /> {HOME_POR_ROL[user.rol].label}
+                      </NavLink>
+                    </li>
+                  )}
+                  <li className="nav-item ms-2">
+                    <button className="nav-link nav-btn-outline px-3" onClick={handleLogout}>
+                      <BsBoxArrowRight className="me-2" /> Salir
+                    </button>
+                  </li>
+                </>
               )}
             </ul>
           </div>

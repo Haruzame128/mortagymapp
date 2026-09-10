@@ -1,5 +1,4 @@
 const CardActividad = ({ titulo, horario, turnos, cuota, vencimiento }) => {
-  console.log('vencimiento en card:', vencimiento)
   return (
     <div className="card">
       <div className="card-body">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { perfilApi } from "../services/api";
+import { usePerfilCliente } from "../hooks/usePerfilCliente";
 import EstadoItem from "../components/usuario/EstadoItem";
 import Swal from "sweetalert2";
 
@@ -27,8 +28,7 @@ const isoToInput = (isoString) => {
 
 export default function Perfil() {
   const { user } = useAuth()
-  const [perfil,     setPerfil]     = useState(null)
-  const [loading,    setLoading]    = useState(true)
+  const { perfil, loading, error, recargar } = usePerfilCliente()
   const [isEditable, setIsEditable] = useState(false)
   const [guardando,  setGuardando]  = useState(false)
 
@@ -44,27 +44,19 @@ export default function Perfil() {
   // Valores originales para cancelar
   const [formOriginal, setFormOriginal] = useState({})
 
-  const cargarPerfil = () => {
-    setLoading(true)
-    perfilApi.getMe()
-      .then(data => {
-        setPerfil(data)
-        const valores = {
-          apellidoNombre:     data.nomap_c          || '',
-          dni:                data.dni_u             || '',
-          direccion:          data.direccion_c       || '',
-          telefono1:          data.telefono_c        || '',
-          telefonoEmergencia: data.tel_emergencia_c  || '',
-          fechaNacimiento:    isoToInput(data.fecha_nac_c),
-        }
-        setFormData(valores)
-        setFormOriginal(valores)
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { cargarPerfil() }, [])
+  useEffect(() => {
+    if (!perfil) return
+    const valores = {
+      apellidoNombre:     perfil.nomap_c          || '',
+      dni:                perfil.dni_u             || '',
+      direccion:          perfil.direccion_c       || '',
+      telefono1:          perfil.telefono_c        || '',
+      telefonoEmergencia: perfil.tel_emergencia_c  || '',
+      fechaNacimiento:    isoToInput(perfil.fecha_nac_c),
+    }
+    setFormData(valores)
+    setFormOriginal(valores)
+  }, [perfil])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -89,7 +81,7 @@ export default function Perfil() {
       })
       Swal.fire('¡Listo!', 'Datos actualizados correctamente', 'success')
       setIsEditable(false)
-      cargarPerfil()
+      recargar()
     } catch (err) {
       Swal.fire('Error', err.message, 'error')
     } finally {
@@ -100,6 +92,15 @@ export default function Perfil() {
   if (loading) return (
     <div className="text-center py-5">
       <div className="spinner-border text-secondary" role="status" />
+    </div>
+  )
+
+  if (error) return (
+    <div className="container perfil mt-4 text-center py-5">
+      <p className="text-muted mb-3">No se pudo cargar tu perfil.</p>
+      <button className="btn btn-outline-primary" onClick={() => recargar()}>
+        Reintentar
+      </button>
     </div>
   )
 

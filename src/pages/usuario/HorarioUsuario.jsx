@@ -1,27 +1,35 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { perfilApi } from "../../services/api";
+import { usePerfilCliente } from "../../hooks/usePerfilCliente";
 import '../../styles/perfiles.css';
 
 const ORDEN_DIAS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
+const DIAS_JS = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
 
 export default function HorarioUsuario() {
   const navigate = useNavigate()
-  const [inscripciones, setInscripciones] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    perfilApi.getMe()
-      .then(data => setInscripciones(data.inscripciones || []))
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
+  const { perfil, loading, error, recargar } = usePerfilCliente()
 
   if (loading) return (
     <div className="text-center py-5">
       <div className="spinner-border text-secondary" role="status" />
     </div>
   )
+
+  if (error) return (
+    <div className="text-center py-5">
+      <p className="text-muted mb-3">No se pudo cargar tu horario.</p>
+      <button className="btn btn-outline-primary" onClick={() => recargar()}>
+        Reintentar
+      </button>
+    </div>
+  )
+
+  const inscripciones = perfil?.inscripciones || []
+  const nombreDiaHoy = DIAS_JS[new Date().getDay()]
+
+  // El botón de reagendar es específico de Musculación (cupos por turno);
+  // no tiene sentido mostrarlo a quien no está inscripto ahí.
+  const tieneMusculacion = inscripciones.some(i => i.tipo_d === 'musculacion')
 
   // Días ordenados según la semana
   const dias = ORDEN_DIAS
@@ -35,15 +43,19 @@ export default function HorarioUsuario() {
   const getClases = (dia, hora) =>
     inscripciones.filter(i => i.dia_h === dia && i.hora_h?.slice(0, 5) === hora)
 
+  const botonReagendar = tieneMusculacion && (
+    <div className="d-flex justify-content-end gap-2 mb-4">
+      <button className="btn btn-principal btn-reagendar" onClick={() => navigate('/perfil/reagendar-turno')}>
+        <i className="ri-calendar-event-line me-2"></i>
+        Cambiar Turno
+      </button>
+    </div>
+  )
+
   if (inscripciones.filter(i => i.dia_h).length === 0) {
     return (
       <>
-        <div className="d-flex justify-content-end gap-2 mb-4">
-          <button className="btn btn-principal btn-reagendar" onClick={() => navigate('/perfil/reagendar-turno')}>
-            <i className="ri-calendar-event-line me-2"></i>
-            Cambiar Turno
-          </button>
-        </div>
+        {botonReagendar}
         <p className="text-center text-muted">No tenés horarios asignados.</p>
       </>
     )
@@ -51,19 +63,18 @@ export default function HorarioUsuario() {
 
   return (
     <>
-      <div className="d-flex justify-content-end gap-2 mb-4">
-        <button className="btn btn-principal btn-reagendar" onClick={() => navigate('/perfil/reagendar-turno')}>
-          <i className="ri-calendar-event-line me-2"></i>
-          Cambiar Turno
-        </button>
-      </div>
+      {botonReagendar}
 
       <div className="tabla-container">
         <table className="table table-bordered text-center align-middle tabla-horario-usuario">
           <thead className="table-head">
             <tr>
               <th>Hora</th>
-              {dias.map(dia => <th key={dia}>{dia}</th>)}
+              {dias.map(dia => (
+                <th key={dia} className={dia === nombreDiaHoy ? "dia-actual" : undefined}>
+                  {dia}{dia === nombreDiaHoy && <span className="badge bg-primary ms-1">Hoy</span>}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -73,7 +84,7 @@ export default function HorarioUsuario() {
                 {dias.map(dia => {
                   const clases = getClases(dia, hora)
                   return (
-                    <td key={`${dia}-${hora}`}>
+                    <td key={`${dia}-${hora}`} className={dia === nombreDiaHoy ? "dia-actual" : undefined}>
                       {clases.length > 0 ? (
                         clases.map((c, idx) => (
                           <div key={idx} className="mb-1">

@@ -7,9 +7,11 @@ export default function ModalAsistencia({ isOpen, onClose, asistencias }) {
   });
 
   return (
-    <div className="modal fade show d-block" tabIndex="-1">
-      <div className="modal-dialog modal-lg modal-dialog-centered">
-        <div className="modal-content">
+    <>
+      <div className="modal-backdrop fade show"></div>
+      <div className="modal fade show d-block" tabIndex="-1">
+        <div className="modal-dialog modal-lg modal-dialog-centered">
+          <div className="modal-content">
 
           {/* HEADER */}
           <div className="modal-header">
@@ -60,10 +62,9 @@ export default function ModalAsistencia({ isOpen, onClose, asistencias }) {
             </button>
           </div>
 
+          </div>
         </div>
       </div>
-
-
-    </div>
+    </>
   );
 }
