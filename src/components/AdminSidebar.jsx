@@ -57,6 +57,11 @@ export default function AdminSidebar({ collapsed, setCollapsed }) {
           <span>Disciplinas</span>
         </NavLink>
 
+        <NavLink to="/admin/ejercicios" className="sidebar-item">
+          <i className="ri-boxing-line"></i>
+          <span>Ejercicios</span>
+        </NavLink>
+
         <NavLink to="/admin/usuarios" className="sidebar-item">
           <i className="ri-shield-user-line"></i>
           <span>Usuarios</span>

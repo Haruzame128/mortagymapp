@@ -44,6 +44,7 @@ import Disciplinas from './pages/admin/Disciplinas'
 import UsuariosAdmin from './pages/admin/Usuarios'
 import Matriculas from './pages/admin/Matriculas'
 import FichaConfig from './pages/admin/FichaConfig'
+import Ejercicios from './pages/admin/Ejercicios'
 
 /* Editor */
 import EditorLayout from './layouts/EditorLayout'
@@ -147,6 +148,7 @@ function AppContent() {
               <Route path="gastos" element={<Gastos />} />
               <Route path="matriculas" element={<Matriculas />} />
               <Route path="disciplinas" element={<Disciplinas />} />
+              <Route path="ejercicios" element={<Ejercicios />} />
               <Route path="usuarios" element={<UsuariosAdmin />} />
               <Route path="ficha-config" element={<FichaConfig />} />
             </Route>
