@@ -4,7 +4,7 @@ import AdminSidebar from "../components/AdminSidebar";
 import "../styles/Admin.css";
 
 export default function AdminLayout() {
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="admin-layout">

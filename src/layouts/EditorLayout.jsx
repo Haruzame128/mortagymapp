@@ -4,7 +4,7 @@ import EditorSidebar from "../components/EditorSidebar";
 import "../styles/Admin.css";
 
 export default function EditorLayout() {
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="admin-layout">

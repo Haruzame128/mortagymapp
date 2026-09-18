@@ -21,6 +21,7 @@ export default function Ejercicios() {
   const [categoriaModo, setCategoriaModo] = useState("existente"); // "existente" | "nueva"
   const [nuevaCategoriaNombre, setNuevaCategoriaNombre] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [eliminandoCategoria, setEliminandoCategoria] = useState(false);
 
   const cargarTodo = async () => {
     try {
@@ -58,7 +59,7 @@ export default function Ejercicios() {
 
   const abrirEditar = (e) => {
     setEditando(e);
-    setForm({ nombre: e.nombre_e, id_categoria: e.id_categoria });
+    setForm({ nombre: e.nombre_e, id_categoria: Number(e.id_categoria) });
     setNuevaCategoriaNombre("");
     setCategoriaModo("existente");
     setModalAbierto(true);
@@ -69,7 +70,7 @@ export default function Ejercicios() {
       setCategoriaModo("nueva");
       setForm({ ...form, id_categoria: "" });
     } else {
-      setForm({ ...form, id_categoria: Number(valor) });
+      setForm({ ...form, id_categoria: valor ? Number(valor) : "" });
     }
   };
 
@@ -107,7 +108,39 @@ export default function Ejercicios() {
   const handleEliminar = (e) => {
     Swal.fire({
       title: `¿Eliminar "${e.nombre_e}"?`,
-      text: "Esta acción no se puede deshacer",
+      text: "Si ya está usado en alguna rutina, en vez de borrarlo se va a desactivar.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc3545",
+      confirmButtonText: "Sí, continuar",
+      cancelButtonText: "Cancelar",
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      try {
+        const resp = await ejerciciosApi.remove(e.id_ejercicio);
+        Swal.fire(resp.desactivado ? "Desactivado" : "¡Listo!", resp.message, resp.desactivado ? "info" : "success");
+        cargarTodo();
+      } catch (err) {
+        Swal.fire("Error", err.message || "No se pudo eliminar el ejercicio", "error");
+      }
+    });
+  };
+
+  const handleToggleActivo = async (e) => {
+    try {
+      await ejerciciosApi.toggleActivo(e.id_ejercicio, !e.activo_e);
+      cargarTodo();
+    } catch (err) {
+      Swal.fire("Error", err.message || "No se pudo actualizar el ejercicio", "error");
+    }
+  };
+
+  const handleEliminarCategoria = () => {
+    const categoria = categorias.find((c) => Number(c.id_categoria) === Number(form.id_categoria));
+    if (!categoria) return;
+    Swal.fire({
+      title: `¿Eliminar la categoría "${categoria.nombre_categoria}"?`,
+      text: "Se borran todos sus ejercicios. Los que ya estén usados en alguna rutina se desactivan en vez de borrarse (y en ese caso la categoría se mantiene).",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc3545",
@@ -115,11 +148,17 @@ export default function Ejercicios() {
       cancelButtonText: "Cancelar",
     }).then(async (result) => {
       if (!result.isConfirmed) return;
+      setEliminandoCategoria(true);
       try {
-        await ejerciciosApi.remove(e.id_ejercicio);
+        const resp = await categoriasEjercicioApi.remove(categoria.id_categoria);
+        Swal.fire("¡Listo!", resp.message, "success");
+        setForm({ ...form, id_categoria: "" });
         cargarTodo();
       } catch (err) {
-        Swal.fire("Error", err.message || "No se pudo eliminar el ejercicio", "error");
+        Swal.fire("No se pudo eliminar del todo", err.message || "No se pudo eliminar la categoría", "warning");
+        cargarTodo();
+      } finally {
+        setEliminandoCategoria(false);
       }
     });
   };
@@ -152,27 +191,39 @@ export default function Ejercicios() {
             <tr>
               <th>Categoría</th>
               <th>Nombre</th>
+              <th className="text-center">Estado</th>
               <th className="text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {cargando ? (
-              <tr><td colSpan="3" className="text-center py-4">Cargando...</td></tr>
+              <tr><td colSpan="4" className="text-center py-4">Cargando...</td></tr>
             ) : ejerciciosFiltrados.length === 0 ? (
-              <tr><td colSpan="3" className="text-center py-4">No hay ejercicios para mostrar</td></tr>
+              <tr><td colSpan="4" className="text-center py-4">No hay ejercicios para mostrar</td></tr>
             ) : (
               ejerciciosFiltrados.map((e) => (
-                <tr key={e.id_ejercicio}>
+                <tr key={e.id_ejercicio} className={!e.activo_e ? "text-muted" : ""}>
                   <td>{e.categoria_e}</td>
                   <td>{e.nombre_e}</td>
+                  <td className="text-center">
+                    <span className={`badge ${e.activo_e ? "bg-success" : "bg-secondary"}`}>
+                      {e.activo_e ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
                   <td className="text-center">
                     <div className="btn-group btn-group-sm">
                       <button className="btn btn-outline-secondary" title="Editar" onClick={() => abrirEditar(e)}>
                         <i className="ri-pencil-fill"></i>
                       </button>
-                      <button className="btn btn-outline-danger" title="Eliminar" onClick={() => handleEliminar(e)}>
-                        <i className="ri-delete-bin-line"></i>
-                      </button>
+                      {e.activo_e ? (
+                        <button className="btn btn-outline-danger" title="Eliminar" onClick={() => handleEliminar(e)}>
+                          <i className="ri-delete-bin-line"></i>
+                        </button>
+                      ) : (
+                        <button className="btn btn-outline-success" title="Reactivar" onClick={() => handleToggleActivo(e)}>
+                          <i className="ri-refresh-line"></i>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -198,17 +249,30 @@ export default function Ejercicios() {
           <div className="mb-3">
             <label className="form-label">Categoría</label>
             {categoriaModo === "existente" ? (
-              <select
-                className="form-select"
-                value={form.id_categoria}
-                onChange={(e) => handleCategoriaSelect(e.target.value)}
-              >
-                <option value="">Seleccioná una categoría</option>
-                {categorias.map((c) => (
-                  <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
-                ))}
-                <option value={NUEVA_CATEGORIA}>+ Agregar nueva categoría</option>
-              </select>
+              <div className="input-group">
+                <select
+                  className="form-select"
+                  value={form.id_categoria}
+                  onChange={(e) => handleCategoriaSelect(e.target.value)}
+                >
+                  <option value="">Seleccioná una categoría</option>
+                  {categorias.map((c) => (
+                    <option key={c.id_categoria} value={c.id_categoria}>{c.nombre_categoria}</option>
+                  ))}
+                  <option value={NUEVA_CATEGORIA}>+ Agregar nueva categoría</option>
+                </select>
+                {form.id_categoria && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger"
+                    title="Eliminar esta categoría"
+                    disabled={eliminandoCategoria}
+                    onClick={handleEliminarCategoria}
+                  >
+                    <i className="ri-delete-bin-line"></i>
+                  </button>
+                )}
+              </div>
             ) : (
               <div className="input-group">
                 <input

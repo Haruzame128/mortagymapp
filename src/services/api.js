@@ -204,6 +204,7 @@ export const ejerciciosApi = {
   getAll: () => get("/api/admin/ejercicios"),
   create: (data) => post("/api/admin/ejercicios", data),
   update: (id, data) => put(`/api/admin/ejercicios/${id}`, data),
+  toggleActivo: (id, activo) => put(`/api/admin/ejercicios/${id}/activo`, { activo }),
   remove: (id) => del(`/api/admin/ejercicios/${id}`),
 };
 
@@ -211,6 +212,7 @@ export const ejerciciosApi = {
 export const categoriasEjercicioApi = {
   getAll: () => get("/api/admin/categorias-ejercicio"),
   create: (nombre) => post("/api/admin/categorias-ejercicio", { nombre }),
+  remove: (id) => del(`/api/admin/categorias-ejercicio/${id}`),
 };
 
 // ── Admin — Horarios ─────────────────────────────────────────────
