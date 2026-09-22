@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { profesorApi } from "../../services/api";
 import Swal from "sweetalert2";
 import EstadoItem from "../../components/usuario/EstadoItem";
+import "../../styles/perfiles.css";
 
 const calcularEdad = (fechaNac) => {
     if (!fechaNac) return ''
@@ -43,6 +44,7 @@ export default function PerfilProfesor() {
     })
 
     const [formOriginal, setFormOriginal] = useState({})
+    const [campoErrors, setCampoErrors] = useState({})
 
     const cargarPerfil = () => {
         setLoading(true)
@@ -70,15 +72,43 @@ export default function PerfilProfesor() {
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData(prev => ({ ...prev, [name]: value }))
+        if (campoErrors[name]) setCampoErrors(prev => ({ ...prev, [name]: undefined }))
     }
 
     const handleCancelar = () => {
         setFormData(formOriginal)
+        setCampoErrors({})
         setIsEditable(false)
+    }
+
+    const TELEFONO_REGEX = /^\d{6,15}$/
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    const validar = () => {
+        const errores = {}
+
+        if (formData.telefono && !TELEFONO_REGEX.test(formData.telefono.trim())) {
+            errores.telefono = 'Ingresá un teléfono válido (solo números)'
+        }
+
+        if (formData.celular && !TELEFONO_REGEX.test(formData.celular.trim())) {
+            errores.celular = 'Ingresá un celular válido (solo números)'
+        }
+
+        if (formData.mail && !EMAIL_REGEX.test(formData.mail.trim())) {
+            errores.mail = 'Ingresá un mail válido'
+        }
+
+        return errores
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
+
+        const errores = validar()
+        setCampoErrors(errores)
+        if (Object.keys(errores).length > 0) return
+
         setGuardando(true)
         try {
             await profesorApi.updatePerfil({
@@ -129,24 +159,27 @@ export default function PerfilProfesor() {
                 <div className="row mb-3">
                     <div className="col-md-6">
                         <label className="form-label">Teléfono</label>
-                        <input type="tel" className="form-control" name="telefono"
+                        <input type="number" className={`form-control no-spinner ${campoErrors.telefono ? 'is-invalid' : ''}`} name="telefono"
                             value={formData.telefono} onChange={handleChange}
                             disabled={!isEditable} />
+                        {campoErrors.telefono && <div className="invalid-feedback">{campoErrors.telefono}</div>}
                     </div>
                     <div className="col-md-6">
                         <label className="form-label">Celular</label>
-                        <input type="tel" className="form-control" name="celular"
+                        <input type="number" className={`form-control no-spinner ${campoErrors.celular ? 'is-invalid' : ''}`} name="celular"
                             value={formData.celular} onChange={handleChange}
                             disabled={!isEditable} />
+                        {campoErrors.celular && <div className="invalid-feedback">{campoErrors.celular}</div>}
                     </div>
                 </div>
 
                 <div className="row mb-3">
                     <div className="col-md-6">
                         <label className="form-label">Email</label>
-                        <input type="email" className="form-control" name="mail"
+                        <input type="email" className={`form-control ${campoErrors.mail ? 'is-invalid' : ''}`} name="mail"
                             value={formData.mail} onChange={handleChange}
                             disabled={!isEditable} />
+                        {campoErrors.mail && <div className="invalid-feedback">{campoErrors.mail}</div>}
                     </div>
                     <div className="col-md-6">
                         <label className="form-label">Dirección</label>

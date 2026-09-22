@@ -103,12 +103,16 @@ export default function AlumnoDetalle() {
       text: "Se ingresa en el teclado del molinete cuando la huella no funciona bien (útil con niños).",
       input: "text",
       inputValue: alumno.pin_acceso_c || "",
-      inputAttributes: { maxlength: 10, inputmode: "numeric" },
+      inputAttributes: { maxlength: 6, inputmode: "numeric" },
       showCancelButton: true,
       showDenyButton: !!alumno.pin_acceso_c,
       denyButtonText: "Quitar PIN",
       confirmButtonText: "Guardar",
       cancelButtonText: "Cancelar",
+      inputValidator: (value) => {
+        if (!value) return "El PIN es obligatorio";
+        if (!/^\d{4,6}$/.test(value)) return "El PIN debe tener entre 4 y 6 dígitos numéricos";
+      },
     });
     if (pin === undefined && !isDenied) return;
 

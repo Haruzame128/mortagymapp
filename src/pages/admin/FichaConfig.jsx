@@ -12,6 +12,7 @@ export default function FichaConfig() {
   });
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [campoErrors, setCampoErrors] = useState({});
 
   useEffect(() => {
     fichaConfigApi
@@ -31,10 +32,42 @@ export default function FichaConfig() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (campoErrors[name]) setCampoErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+
+  const CUIT_REGEX = /^\d{2}-?\d{8}-?\d{1}$/;
+
+  const validar = () => {
+    const errores = {};
+
+    if (!formData.nombre_gimnasio.trim()) {
+      errores.nombre_gimnasio = "El nombre del gimnasio es obligatorio";
+    }
+
+    if (!formData.cuit.trim()) {
+      errores.cuit = "El CUIT es obligatorio";
+    } else if (!CUIT_REGEX.test(formData.cuit.trim())) {
+      errores.cuit = "Ingresá un CUIT válido (ej: 20-12345678-9)";
+    }
+
+    if (!formData.direccion.trim()) {
+      errores.direccion = "La dirección es obligatoria";
+    }
+
+    if (!formData.condiciones.trim()) {
+      errores.condiciones = "Las condiciones de inscripción son obligatorias";
+    }
+
+    return errores;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const errores = validar();
+    setCampoErrors(errores);
+    if (Object.keys(errores).length > 0) return;
+
     setGuardando(true);
     try {
       await fichaConfigApi.update(formData);
@@ -71,35 +104,36 @@ export default function FichaConfig() {
               <label className="form-label">Nombre del gimnasio</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${campoErrors.nombre_gimnasio ? "is-invalid" : ""}`}
                 name="nombre_gimnasio"
                 value={formData.nombre_gimnasio}
                 onChange={handleChange}
-                required
               />
+              {campoErrors.nombre_gimnasio && <div className="invalid-feedback">{campoErrors.nombre_gimnasio}</div>}
             </div>
             <div className="col-md-6">
               <label className="form-label">CUIT</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${campoErrors.cuit ? "is-invalid" : ""}`}
                 name="cuit"
+                placeholder="Ej: 20-12345678-9"
                 value={formData.cuit}
                 onChange={handleChange}
-                required
               />
+              {campoErrors.cuit && <div className="invalid-feedback">{campoErrors.cuit}</div>}
             </div>
           </div>
           <div className="mb-4">
             <label className="form-label">Dirección</label>
             <input
               type="text"
-              className="form-control"
+              className={`form-control ${campoErrors.direccion ? "is-invalid" : ""}`}
               name="direccion"
               value={formData.direccion}
               onChange={handleChange}
-              required
             />
+            {campoErrors.direccion && <div className="invalid-feedback">{campoErrors.direccion}</div>}
           </div>
 
           <h6 className="fw-bold mb-2">Condiciones de inscripción</h6>
@@ -107,14 +141,14 @@ export default function FichaConfig() {
             Texto legal que se imprime al final de la ficha. Podés editarlo si cambian las condiciones del gimnasio.
           </small>
           <textarea
-            className="form-control mb-4"
+            className={`form-control mb-4 ${campoErrors.condiciones ? "is-invalid" : ""}`}
             name="condiciones"
             rows={18}
             style={{ fontFamily: "monospace", fontSize: ".85rem" }}
             value={formData.condiciones}
             onChange={handleChange}
-            required
           />
+          {campoErrors.condiciones && <div className="invalid-feedback d-block mb-4">{campoErrors.condiciones}</div>}
 
           <div className="d-flex justify-content-end">
             <button type="submit" className="btn btn-admin" disabled={guardando}>

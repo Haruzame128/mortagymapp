@@ -7,17 +7,38 @@ export default function Login() {
   const { login } = useAuth();
   const [error,   setError]   = useState("");
   const [loading, setLoading] = useState(false);
+  const [campoErrors, setCampoErrors] = useState({});
+
+  const validar = (dniTexto, contrasena) => {
+    const errores = {};
+
+    if (!dniTexto) {
+      errores.dni = "El DNI es obligatorio";
+    } else if (!/^\d{7,8}$/.test(dniTexto)) {
+      errores.dni = "Ingresá un DNI válido (7 u 8 dígitos)";
+    }
+
+    if (!contrasena) {
+      errores.password = "La contraseña es obligatoria";
+    }
+
+    return errores;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    const dniTexto    = e.target.dni.value.trim();
+    const contrasena  = e.target.password.value.trim();
+
+    const errores = validar(dniTexto, contrasena);
+    setCampoErrors(errores);
+    if (Object.keys(errores).length > 0) return;
+
     setLoading(true);
-
-    const dni       = parseInt(e.target.dni.value.trim())
-    const contrasena = e.target.password.value.trim();
-
     try {
-      await login(dni, contrasena); // redirige automáticamente según rol
+      await login(parseInt(dniTexto), contrasena); // redirige automáticamente según rol
     } catch (err) {
       setError(err.message || "Credenciales incorrectas");
     } finally {
@@ -46,10 +67,12 @@ export default function Login() {
             <input
               type="number"
               name="dni"
-              className="form-control"
+              className={`form-control no-spinner ${campoErrors.dni ? "is-invalid" : ""}`}
               placeholder="Ej: 40123456"
-              required
             />
+            {campoErrors.dni && (
+              <div className="invalid-feedback">{campoErrors.dni}</div>
+            )}
           </div>
 
           <div className="mb-4">
@@ -59,10 +82,12 @@ export default function Login() {
             <input
               type="password"
               name="password"
-              className="form-control"
+              className={`form-control ${campoErrors.password ? "is-invalid" : ""}`}
               placeholder="********"
-              required
             />
+            {campoErrors.password && (
+              <div className="invalid-feedback">{campoErrors.password}</div>
+            )}
           </div>
 
           <div className="d-grid">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { profesoresApi, contratosApi, disciplinasApi, actividadesApi, horariosApi } from "../../services/api";
 import Swal from "sweetalert2";
+import "../../styles/perfiles.css";
 
 const MODALIDADES = [
   { value: "porcentaje", label: "Porcentaje del recaudado" },
@@ -22,6 +23,7 @@ export default function FichaProfesor({ onSubmit, profesorId }) {
     telefonoEmergencia: "",
     fechaNacimiento: "",
   });
+  const [campoErrors, setCampoErrors] = useState({});
 
   // ── Disciplinas (para condiciones de contrato y horarios) ────────
   const [disciplinas, setDisciplinas] = useState([]);
@@ -282,10 +284,55 @@ export default function FichaProfesor({ onSubmit, profesorId }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    if (campoErrors[name]) setCampoErrors(prev => ({ ...prev, [name]: undefined }));
+  };
+
+  const TELEFONO_REGEX = /^\d{6,15}$/;
+
+  const validarDatosPersonales = () => {
+    const errores = {};
+
+    if (!formData.apellidoNombre.trim()) {
+      errores.apellidoNombre = "El nombre y apellido es obligatorio";
+    }
+
+    if (!profesorId) {
+      const dni = String(formData.dni || "").trim();
+      if (!dni) {
+        errores.dni = "El DNI es obligatorio";
+      } else if (!/^\d{7,8}$/.test(dni)) {
+        errores.dni = "Ingresá un DNI válido (7 u 8 dígitos)";
+      }
+    }
+
+    if (formData.telefono1 && !TELEFONO_REGEX.test(String(formData.telefono1).trim())) {
+      errores.telefono1 = "Ingresá un teléfono válido (solo números)";
+    }
+
+    if (formData.telefonoEmergencia && !TELEFONO_REGEX.test(String(formData.telefonoEmergencia).trim())) {
+      errores.telefonoEmergencia = "Ingresá un teléfono válido (solo números)";
+    }
+
+    if (formData.fechaNacimiento) {
+      const fecha = new Date(formData.fechaNacimiento);
+      if (fecha > new Date()) {
+        errores.fechaNacimiento = "La fecha de nacimiento no puede ser futura";
+      }
+    }
+
+    return errores;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const errores = validarDatosPersonales();
+    setCampoErrors(errores);
+    if (Object.keys(errores).length > 0) {
+      Swal.fire("Revisá los datos personales", "Hay campos obligatorios o inválidos", "warning");
+      return;
+    }
+
     try {
       if (profesorId) {
         await profesoresApi.update(profesorId, {
@@ -381,24 +428,24 @@ export default function FichaProfesor({ onSubmit, profesorId }) {
           <label className="form-label">Apellido y Nombre</label>
           <input
             type="text"
-            className="form-control"
+            className={`form-control ${campoErrors.apellidoNombre ? "is-invalid" : ""}`}
             name="apellidoNombre"
             value={formData.apellidoNombre}
             onChange={handleChange}
-            required
           />
+          {campoErrors.apellidoNombre && <div className="invalid-feedback">{campoErrors.apellidoNombre}</div>}
         </div>
         <div className="col-md-6">
           <label className="form-label">DNI</label>
           <input
             type="number"
-            className="form-control"
+            className={`form-control no-spinner ${campoErrors.dni ? "is-invalid" : ""}`}
             name="dni"
             value={formData.dni}
             onChange={handleChange}
             disabled={!!profesorId}
-            required
           />
+          {campoErrors.dni && <div className="invalid-feedback">{campoErrors.dni}</div>}
         </div>
       </div>
 
@@ -417,23 +464,25 @@ export default function FichaProfesor({ onSubmit, profesorId }) {
         <div className="col-md-6">
           <label className="form-label">Teléfono</label>
           <input
-            type="tel"
-            className="form-control"
+            type="number"
+            className={`form-control no-spinner ${campoErrors.telefono1 ? "is-invalid" : ""}`}
             name="telefono1"
             value={formData.telefono1}
             onChange={handleChange}
           />
+          {campoErrors.telefono1 && <div className="invalid-feedback">{campoErrors.telefono1}</div>}
         </div>
 
         <div className="col-md-6">
           <label className="form-label">Teléfono de emergencia</label>
           <input
-            type="tel"
-            className="form-control"
+            type="number"
+            className={`form-control no-spinner ${campoErrors.telefonoEmergencia ? "is-invalid" : ""}`}
             name="telefonoEmergencia"
             value={formData.telefonoEmergencia}
             onChange={handleChange}
           />
+          {campoErrors.telefonoEmergencia && <div className="invalid-feedback">{campoErrors.telefonoEmergencia}</div>}
         </div>
       </div>
 
@@ -442,11 +491,13 @@ export default function FichaProfesor({ onSubmit, profesorId }) {
           <label className="form-label">Fecha de nacimiento</label>
           <input
             type="date"
-            className="form-control"
+            className={`form-control ${campoErrors.fechaNacimiento ? "is-invalid" : ""}`}
             name="fechaNacimiento"
             value={formData.fechaNacimiento}
             onChange={handleChange}
+            max={new Date().toISOString().slice(0, 10)}
           />
+          {campoErrors.fechaNacimiento && <div className="invalid-feedback">{campoErrors.fechaNacimiento}</div>}
         </div>
       </div>
 
@@ -491,7 +542,10 @@ export default function FichaProfesor({ onSubmit, profesorId }) {
                   {contratoVigente.fecha_vencimiento
                     ? new Date(contratoVigente.fecha_vencimiento).toLocaleDateString("es-AR")
                     : "Sin plazo"}
-                  {contratoVigente.dias_para_vencer != null && contratoVigente.dias_para_vencer <= 30 && (
+                  {contratoVigente.dias_para_vencer != null && contratoVigente.dias_para_vencer < 0 && (
+                    <span className="badge bg-danger ms-2">Vencido</span>
+                  )}
+                  {contratoVigente.dias_para_vencer != null && contratoVigente.dias_para_vencer >= 0 && contratoVigente.dias_para_vencer <= 30 && (
                     <span className="badge bg-warning text-dark ms-2">
                       Vence en {contratoVigente.dias_para_vencer} días
                     </span>

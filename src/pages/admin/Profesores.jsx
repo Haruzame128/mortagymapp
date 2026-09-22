@@ -80,19 +80,23 @@ export default function Profesores() {
 
   const estadoBadge = (a) => {
     if (!a.id_contrato) return <span className="badge bg-secondary">Sin contrato</span>;
+
+    // El backend a veces no recalcula estado_contrato al vuelo: si los días
+    // para vencer ya son negativos, el plazo venció aunque diga "vigente".
+    const vencido = a.estado_contrato === "vencido" || (a.dias_para_vencer != null && a.dias_para_vencer < 0);
+    if (vencido) return <span className="badge bg-danger">Vencido</span>;
+
     if (a.estado_contrato === "vigente") {
-      return (
-        <>
-          <span className="badge bg-success">Vigente</span>
-          {a.dias_para_vencer != null && a.dias_para_vencer <= 30 && (
-            <span className="badge bg-warning text-dark ms-1">
-              Vence en {a.dias_para_vencer}d
-            </span>
-          )}
-        </>
-      );
+      if (a.dias_para_vencer != null && a.dias_para_vencer <= 30) {
+        return (
+          <span className="badge bg-warning text-dark">
+            Vence en {a.dias_para_vencer}d
+          </span>
+        );
+      }
+      return <span className="badge bg-success">Vigente</span>;
     }
-    if (a.estado_contrato === "vencido") return <span className="badge bg-danger">Vencido</span>;
+
     return <span className="badge bg-secondary">Rescindido</span>;
   };
 

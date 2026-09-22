@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { clientesApi } from "../../services/api";
 import ModalRenovarSuscripcion from "../../components/admin/ModalRenovarSuscripcion";
+import "../../styles/perfiles.css";
 
 export default function Renovacion() {
   const [searchParams] = useSearchParams();
@@ -40,6 +41,10 @@ export default function Renovacion() {
     e.preventDefault();
     const dni = busqueda.trim();
     if (!dni) return;
+    if (!/^\d+$/.test(dni)) {
+      Swal.fire("DNI inválido", "Ingresá solo números", "warning");
+      return;
+    }
     const encontrado = clientes.find((c) => String(c.dni_u) === dni);
     if (!encontrado) {
       Swal.fire("Sin resultados", `No se encontró ningún alumno con DNI ${dni}`, "warning");
@@ -84,8 +89,8 @@ export default function Renovacion() {
       <form className="card admin-card mb-4" onSubmit={handleBuscar}>
         <div className="card-body d-flex gap-2">
           <input
-            type="text"
-            className="form-control"
+            type="number"
+            className="form-control no-spinner"
             placeholder="DNI del alumno"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}

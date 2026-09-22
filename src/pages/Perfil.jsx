@@ -4,6 +4,7 @@ import { perfilApi } from "../services/api";
 import { usePerfilCliente } from "../hooks/usePerfilCliente";
 import EstadoItem from "../components/usuario/EstadoItem";
 import Swal from "sweetalert2";
+import "../styles/perfiles.css";
 
 const calcularEdad = (fechaNac) => {
   if (!fechaNac) return ''
@@ -43,6 +44,7 @@ export default function Perfil() {
 
   // Valores originales para cancelar
   const [formOriginal, setFormOriginal] = useState({})
+  const [campoErrors, setCampoErrors] = useState({})
 
   useEffect(() => {
     if (!perfil) return
@@ -61,17 +63,40 @@ export default function Perfil() {
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+    if (campoErrors[name]) setCampoErrors(prev => ({ ...prev, [name]: undefined }))
   }
 
   const handleEditar = () => setIsEditable(true)
 
   const handleCancelar = () => {
     setFormData(formOriginal)
+    setCampoErrors({})
     setIsEditable(false)
+  }
+
+  const TELEFONO_REGEX = /^\d{6,15}$/
+
+  const validar = () => {
+    const errores = {}
+
+    if (formData.telefono1 && !TELEFONO_REGEX.test(formData.telefono1.trim())) {
+      errores.telefono1 = 'Ingresá un teléfono válido (solo números)'
+    }
+
+    if (formData.telefonoEmergencia && !TELEFONO_REGEX.test(formData.telefonoEmergencia.trim())) {
+      errores.telefonoEmergencia = 'Ingresá un teléfono válido (solo números)'
+    }
+
+    return errores
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    const errores = validar()
+    setCampoErrors(errores)
+    if (Object.keys(errores).length > 0) return
+
     setGuardando(true)
     try {
       await perfilApi.update({
@@ -139,15 +164,17 @@ export default function Perfil() {
         <div className="row mb-3">
           <div className="col-md-6">
             <label className="form-label">Teléfono</label>
-            <input type="tel" className="form-control" name="telefono1"
+            <input type="number" className={`form-control no-spinner ${campoErrors.telefono1 ? 'is-invalid' : ''}`} name="telefono1"
               value={formData.telefono1} onChange={handleChange}
               disabled={!isEditable} />
+            {campoErrors.telefono1 && <div className="invalid-feedback">{campoErrors.telefono1}</div>}
           </div>
           <div className="col-md-6">
             <label className="form-label">Teléfono de emergencia</label>
-            <input type="tel" className="form-control" name="telefonoEmergencia"
+            <input type="number" className={`form-control no-spinner ${campoErrors.telefonoEmergencia ? 'is-invalid' : ''}`} name="telefonoEmergencia"
               value={formData.telefonoEmergencia} onChange={handleChange}
               disabled={!isEditable} />
+            {campoErrors.telefonoEmergencia && <div className="invalid-feedback">{campoErrors.telefonoEmergencia}</div>}
           </div>
         </div>
 

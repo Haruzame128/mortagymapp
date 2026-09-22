@@ -6,6 +6,7 @@ import { clientesApi, disciplinasApi, actividadesApi, horariosApi, fichaConfigAp
 import generarFichaInscripcionPDF, { normalizarInscripcionExistente } from '../../utils/generarFichaInscripcionPDF'
 import { PREGUNTAS_CLINICA, FORM_VACIO_CLINICA, mapearFichaDB, armarFichaMedicaPayload } from '../../utils/fichaMedica'
 import { tieneConProfesor, calcularPrecio } from '../../utils/preciosDisciplina'
+import '../../styles/perfiles.css'
 
 const TIPOS_PAGO = ['efectivo', 'transferencia', 'tarjeta', 'mercadopago']
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado']
@@ -53,6 +54,7 @@ export default function FichaInscripcion({
 
   // ── Form personal ──────────────────────────────────────────────
   const [formData, setFormData] = useState(FORM_VACIO)
+  const [campoErrors, setCampoErrors] = useState({})
 
   // ── Pre-cargar datos en modo edición ───────────────────────────
   useEffect(() => {
@@ -208,8 +210,47 @@ export default function FichaInscripcion({
   const handleQuitarInscripcion = (idx) => setInscAgregadas(prev => prev.filter((_, i) => i !== idx))
 
   const dni = String(formData.dni || '').trim()
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+    if (campoErrors[e.target.name]) setCampoErrors(prev => ({ ...prev, [e.target.name]: undefined }))
+  }
   const handleCheckbox = (e) => setFormData({ ...formData, [e.target.name]: e.target.checked })
+
+  const TELEFONO_REGEX = /^\d{6,15}$/
+
+  const validarDatosPersonales = () => {
+    const errores = {}
+
+    if (!formData.apellidoNombre.trim()) {
+      errores.apellidoNombre = 'El nombre y apellido es obligatorio'
+    }
+
+    if (!modoEdicion) {
+      if (!dni) {
+        errores.dni = 'El DNI es obligatorio'
+      } else if (!/^\d{7,8}$/.test(dni)) {
+        errores.dni = 'Ingresá un DNI válido (7 u 8 dígitos)'
+      }
+    }
+
+    if (formData.telefono1 && !TELEFONO_REGEX.test(formData.telefono1.trim())) {
+      errores.telefono1 = 'Ingresá un teléfono válido'
+    }
+
+    if (formData.telefonoEmergencia && !TELEFONO_REGEX.test(formData.telefonoEmergencia.trim())) {
+      errores.telefonoEmergencia = 'Ingresá un teléfono válido'
+    }
+
+    if (formData.fechaNacimiento) {
+      const fecha = new Date(formData.fechaNacimiento)
+      const hoy = new Date()
+      if (fecha > hoy) {
+        errores.fechaNacimiento = 'La fecha de nacimiento no puede ser futura'
+      }
+    }
+
+    return errores
+  }
 
   const handleRegistrarHuella = () => {
     if (!dni || dni.length < 7) { alert('Ingresá el DNI antes de registrar la huella'); return }
@@ -235,6 +276,14 @@ export default function FichaInscripcion({
   // ── Submit ─────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    const errores = validarDatosPersonales()
+    setCampoErrors(errores)
+    if (Object.keys(errores).length > 0) {
+      Swal.fire('Revisá los datos personales', 'Hay campos obligatorios o inválidos', 'warning')
+      return
+    }
+
     try {
       const fichaData = armarFichaMedicaPayload(formData)
 
@@ -343,14 +392,16 @@ export default function FichaInscripcion({
               <div className="row mb-3">
                 <div className="col-md-6">
                   <label className="form-label">Apellido y Nombre</label>
-                  <input type="text" className="form-control" name="apellidoNombre"
+                  <input type="text" className={`form-control ${campoErrors.apellidoNombre ? 'is-invalid' : ''}`} name="apellidoNombre"
                     value={formData.apellidoNombre} onChange={handleChange} />
+                  {campoErrors.apellidoNombre && <div className="invalid-feedback">{campoErrors.apellidoNombre}</div>}
                 </div>
                 <div className="col-md-6">
                   <label className="form-label">DNI</label>
-                  <input type="number" className="form-control" name="dni"
+                  <input type="number" className={`form-control no-spinner ${campoErrors.dni ? 'is-invalid' : ''}`} name="dni"
                     value={formData.dni} onChange={handleChange}
                     disabled={modoEdicion} />
+                  {campoErrors.dni && <div className="invalid-feedback">{campoErrors.dni}</div>}
                 </div>
               </div>
               <div className="mb-3">
@@ -361,20 +412,24 @@ export default function FichaInscripcion({
               <div className="row mb-3">
                 <div className="col-md-6">
                   <label className="form-label">Teléfono</label>
-                  <input type="tel" className="form-control" name="telefono1"
+                  <input type="number" className={`form-control no-spinner ${campoErrors.telefono1 ? 'is-invalid' : ''}`} name="telefono1"
                     value={formData.telefono1} onChange={handleChange} />
+                  {campoErrors.telefono1 && <div className="invalid-feedback">{campoErrors.telefono1}</div>}
                 </div>
                 <div className="col-md-6">
                   <label className="form-label">Teléfono de emergencia</label>
-                  <input type="tel" className="form-control" name="telefonoEmergencia"
+                  <input type="number" className={`form-control no-spinner ${campoErrors.telefonoEmergencia ? 'is-invalid' : ''}`} name="telefonoEmergencia"
                     value={formData.telefonoEmergencia} onChange={handleChange} />
+                  {campoErrors.telefonoEmergencia && <div className="invalid-feedback">{campoErrors.telefonoEmergencia}</div>}
                 </div>
               </div>
               <div className="row mb-3">
                 <div className="col-md-6">
                   <label className="form-label">Fecha de nacimiento</label>
-                  <input type="date" className="form-control" name="fechaNacimiento"
-                    value={formData.fechaNacimiento} onChange={handleChange} />
+                  <input type="date" className={`form-control ${campoErrors.fechaNacimiento ? 'is-invalid' : ''}`} name="fechaNacimiento"
+                    value={formData.fechaNacimiento} onChange={handleChange}
+                    max={new Date().toISOString().slice(0, 10)} />
+                  {campoErrors.fechaNacimiento && <div className="invalid-feedback">{campoErrors.fechaNacimiento}</div>}
                 </div>
               </div>
             </div>

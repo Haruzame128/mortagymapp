@@ -267,7 +267,10 @@ export default function ProfesorDetalle() {
                   {contratoVigente.fecha_vencimiento
                     ? new Date(contratoVigente.fecha_vencimiento).toLocaleDateString("es-AR")
                     : "Sin plazo"}
-                  {contratoVigente.dias_para_vencer != null && contratoVigente.dias_para_vencer <= 30 && (
+                  {contratoVigente.dias_para_vencer != null && contratoVigente.dias_para_vencer < 0 && (
+                    <span className="badge bg-danger ms-2">Vencido</span>
+                  )}
+                  {contratoVigente.dias_para_vencer != null && contratoVigente.dias_para_vencer >= 0 && contratoVigente.dias_para_vencer <= 30 && (
                     <span className="badge bg-warning text-dark ms-2">
                       Vence en {contratoVigente.dias_para_vencer} días
                     </span>

@@ -144,6 +144,29 @@ export default function FormRutina() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         if (!alumnoId) { Swal.fire('Error', 'Seleccioná un alumno', 'error'); return }
+
+        const hayIncompletos = rutina.some(dia =>
+            dia.ejercicios.some(ej => ej.musculo && !ej.id_ejercicio)
+        )
+        if (hayIncompletos) {
+            Swal.fire('Error', 'Hay un ejercicio con músculo seleccionado pero sin ejercicio elegido', 'error')
+            return
+        }
+
+        const hayNegativos = rutina.some(dia =>
+            dia.ejercicios.some(ej => Number(ej.series) < 0 || Number(ej.repeticiones) < 0 || Number(ej.peso) < 0)
+        )
+        if (hayNegativos) {
+            Swal.fire('Error', 'Series, repeticiones y peso no pueden ser negativos', 'error')
+            return
+        }
+
+        const hayAlMenosUnEjercicio = rutina.some(dia => dia.ejercicios.some(ej => ej.id_ejercicio))
+        if (!hayAlMenosUnEjercicio) {
+            Swal.fire('Error', 'Agregá al menos un ejercicio a la rutina', 'error')
+            return
+        }
+
         setGuardando(true)
         try {
             await profesorApi.guardarRutina({
@@ -270,21 +293,21 @@ export default function FormRutina() {
                                                             </div>
                                                             <div className="col-4 col-md-2 col-lg-1">
                                                                 <label className="form-label">Series</label>
-                                                                <input type="number" className="form-control"
+                                                                <input type="number" className="form-control" min="0"
                                                                     value={ej.series}
                                                                     onChange={e => actualizarCampo(diaIndex, ejIndex, 'series', e.target.value)}
                                                                     placeholder="0" />
                                                             </div>
                                                             <div className="col-4 col-md-2 col-lg-1">
                                                                 <label className="form-label">Reps</label>
-                                                                <input type="number" className="form-control"
+                                                                <input type="number" className="form-control" min="0"
                                                                     value={ej.repeticiones}
                                                                     onChange={e => actualizarCampo(diaIndex, ejIndex, 'repeticiones', e.target.value)}
                                                                     placeholder="0" />
                                                             </div>
                                                             <div className="col-4 col-md-2 col-lg-1">
                                                                 <label className="form-label">Peso</label>
-                                                                <input type="number" className="form-control"
+                                                                <input type="number" className="form-control" min="0"
                                                                     value={ej.peso}
                                                                     onChange={e => actualizarCampo(diaIndex, ejIndex, 'peso', e.target.value)}
                                                                     placeholder="0" />

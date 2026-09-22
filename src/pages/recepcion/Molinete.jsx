@@ -1,10 +1,13 @@
 import { useState } from "react";
+import "../../styles/perfiles.css";
 
 export default function Molinete() {
   const [formData, setFormData] = useState({
     dni: "",
+    tipoUsuario: "",
     comentario: "",
   });
+  const [campoErrors, setCampoErrors] = useState({});
 
   const tipoUsuario = [
     "Alumno",
@@ -14,13 +17,38 @@ export default function Molinete() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+    if (campoErrors[name]) setCampoErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+
+  const validar = () => {
+    const errores = {};
+    const dni = String(formData.dni || "").trim();
+
+    if (!dni) {
+      errores.dni = "El DNI es obligatorio";
+    } else if (!/^\d{7,8}$/.test(dni)) {
+      errores.dni = "Ingresá un DNI válido (7 u 8 dígitos)";
+    }
+
+    if (!formData.tipoUsuario) {
+      errores.tipoUsuario = "Seleccioná el tipo de usuario";
+    }
+
+    if (!formData.comentario.trim()) {
+      errores.comentario = "Indicá el motivo de la apertura manual";
+    }
+
+    return errores;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Ficha de inscripción:", formData);
 
-    if (onSubmit) onSubmit(formData);
+    const errores = validar();
+    setCampoErrors(errores);
+    if (Object.keys(errores).length > 0) return;
+
+    console.log("Ficha de inscripción:", formData);
   };
   return (
     <div>
@@ -33,21 +61,20 @@ export default function Molinete() {
             <label className="form-label">DNI</label>
             <input
               type="number"
-              className="form-control"
+              className={`form-control no-spinner ${campoErrors.dni ? "is-invalid" : ""}`}
               name="dni"
               value={formData.dni}
               onChange={handleChange}
-              required
             />
+            {campoErrors.dni && <div className="invalid-feedback">{campoErrors.dni}</div>}
           </div>
           <div className="col-md-6">
             <label className="form-label">Tipo de Usuario</label>
             <select
-              className="form-select"
+              className={`form-select ${campoErrors.tipoUsuario ? "is-invalid" : ""}`}
               name="tipoUsuario"
               value={formData.tipoUsuario}
               onChange={handleChange}
-              required
             >
               <option value="">Seleccionar Tipo de Usuario</option>
               {tipoUsuario.map((tipoUsuario) => (
@@ -56,18 +83,19 @@ export default function Molinete() {
                 </option>
               ))}
             </select>
+            {campoErrors.tipoUsuario && <div className="invalid-feedback">{campoErrors.tipoUsuario}</div>}
           </div>
         </div>
 
         <div className="mb-3">
           <label className="form-label">Comentario</label>
           <textarea
-            type="text"
-            className="form-control"
+            className={`form-control ${campoErrors.comentario ? "is-invalid" : ""}`}
             name="comentario"
             value={formData.comentario}
             onChange={handleChange}
           />
+          {campoErrors.comentario && <div className="invalid-feedback">{campoErrors.comentario}</div>}
         </div>
 
         {/* BOTONES */}

@@ -76,6 +76,7 @@ export default function Caja() {
               className="form-control"
               name="fecha_desde"
               value={filtros.fecha_desde}
+              max={filtros.fecha_hasta || undefined}
               onChange={handleFiltroChange}
             />
           </div>
@@ -86,6 +87,7 @@ export default function Caja() {
               className="form-control"
               name="fecha_hasta"
               value={filtros.fecha_hasta}
+              min={filtros.fecha_desde || undefined}
               onChange={handleFiltroChange}
             />
           </div>

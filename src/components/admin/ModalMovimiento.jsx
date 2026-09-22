@@ -52,6 +52,16 @@ export default function ModalMovimiento({
       return;
     }
 
+    if (!formData.descripcion.trim()) {
+      Swal.fire("Error", "Ingresá una descripción", "error");
+      return;
+    }
+
+    if (!formData.monto_m || Number(formData.monto_m) <= 0) {
+      Swal.fire("Error", "Ingresá un monto mayor a 0", "error");
+      return;
+    }
+
     const hoy = new Date();
     const fechaString = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
 

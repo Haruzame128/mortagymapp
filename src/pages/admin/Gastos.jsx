@@ -224,6 +224,7 @@ export default function Gastos() {
                 className="form-control"
                 name="fecha_desde"
                 value={filtros.fecha_desde}
+                max={filtros.fecha_hasta}
                 onChange={handleFiltroChange}
               />
             </div>
@@ -234,6 +235,7 @@ export default function Gastos() {
                 className="form-control"
                 name="fecha_hasta"
                 value={filtros.fecha_hasta}
+                min={filtros.fecha_desde}
                 onChange={handleFiltroChange}
               />
             </div>
